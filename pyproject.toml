@@ -1,0 +1,29 @@
+[project]
+name = "readme-ai"
+version = "0.1.0"
+description = ""
+authors = [{ name = "botirk38", email = "botir.khaltaev@squaredup.com" }]
+readme = "README.md"
+requires-python = ">=3.9,<4.0"
+dependencies = [
+  "fastapi (>=0.115.8,<0.116.0)",
+  "uvicorn (>=0.34.0,<0.35.0)",
+  "gitpython (>=3.1.44,<4.0.0)",
+  "python-dotenv (>=1.0.1,<2.0.0)",
+  "pydantic (>=2.10.6,<3.0.0)",
+  "pytest (>=8.3.4,<9.0.0)",
+  "black (>=25.1.0,<26.0.0)",
+  "ruff (>=0.9.4,<0.10.0)",
+  "langchain (>=0.3.17,<0.4.0)",
+  "langchain-groq (>=0.2.4,<0.3.0)",
+  "langchain-community (>=0.3.16,<0.4.0)",
+  "langgraph (>=0.2.69,<0.3.0)",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+start = "readme_ai.main:main"
