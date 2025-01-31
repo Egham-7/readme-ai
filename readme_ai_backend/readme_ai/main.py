@@ -8,14 +8,13 @@ from readme_ai.readme_agent import ReadmeCompilerAgent
 from readme_ai.settings import get_settings
 from dotenv import load_dotenv
 import logging
-import asyncio
 import uuid
 from datetime import datetime
 
 # Load environment variables and configure logging
 load_dotenv()
 settings = get_settings()
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
@@ -102,6 +101,8 @@ async def stream_readme(request: RepoRequest):
     try:
         # First analyze the repository
         repo_analysis = await repo_analyzer.analyze_repo(str(request.repo_url))
+
+        logger.debug(f"Repo Analysis: {repo_analysis}")
         
         # Then stream the README generation
         return StreamingResponse(

@@ -1,3 +1,4 @@
+import logging
 from langchain_groq import ChatGroq
 from langgraph.graph import StateGraph, START, END
 from typing import AsyncIterator, Dict, TypedDict, Annotated, List, Union
@@ -5,7 +6,8 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from pydantic import BaseModel, Field
 from langgraph.graph.message import add_messages
 
-
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class State(TypedDict):
     messages: Annotated[list, add_messages]
@@ -57,6 +59,7 @@ class ReadmeCompilerAgent:
 
     def _process_analysis_node(self, state: State) -> State:
         """Processes repository analysis and prepares for README generation"""
+        logger.info("Processing repository analysis")
         return {
             **state,
             "messages": state["messages"] + [
@@ -65,6 +68,7 @@ class ReadmeCompilerAgent:
         }
 
     async def _generate_readme_node(self, state: State) -> State:
+        logger.info("Generating README content")
         chunks = []
         async for chunk in self.model.astream([
             {
@@ -77,6 +81,7 @@ class ReadmeCompilerAgent:
             }
         ]):
             chunks.append(chunk.content)
+            logger.info(f"Generated README chunk: {chunk.content}")
             
         return {
             **state,
@@ -86,6 +91,7 @@ class ReadmeCompilerAgent:
     def _join_node(self, state: State) -> State:
         """Evaluates README quality and decides on replanning"""
         readme_content = "".join(state["readme_chunks"])
+        logger.info(f"Evaluating README quality:\n{readme_content}")
         
         evaluation = self.model.invoke([
             {
@@ -98,13 +104,15 @@ class ReadmeCompilerAgent:
             }
         ])
         
-        if "needs_improvement" in evaluation.lower():
+        if "needs_improvement" in evaluation.content.lower():
+            logger.info(f"README needs improvement: {evaluation}")
             return {
                 **state,
                 "messages": state["messages"] + [
                     SystemMessage(content=f"Previous README needs improvement: {evaluation}")
                 ]
             }
+        logger.info("README is satisfactory")
         return {
             **state,
             "messages": state["messages"] + [
@@ -116,6 +124,7 @@ class ReadmeCompilerAgent:
         return isinstance(state["messages"][-1], SystemMessage)
 
     async def generate_readme(self, repo_analysis: Dict) -> AsyncIterator[str]:
+        logger.info("Starting README generation")
         initial_state = {
             "messages": [HumanMessage(content="Generate README")],
             "repo_analysis": repo_analysis,
@@ -125,4 +134,5 @@ class ReadmeCompilerAgent:
         async for state in self.graph.astream(initial_state):
             if "readme_chunks" in state and state["readme_chunks"]:
                 for chunk in state["readme_chunks"]:
+                    logger.info(f"Yielding README chunk: {chunk}")
                     yield chunk
