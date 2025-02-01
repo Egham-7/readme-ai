@@ -31,7 +31,9 @@ WORKDIR $PYSETUP_PATH
 COPY poetry.lock pyproject.toml ./
 
 # Install runtime dependencies
-RUN poetry install --no-dev
+RUN poetry install --only main --no-interaction --no-root
+
+
 
 # Runtime stage
 FROM python-base as production
