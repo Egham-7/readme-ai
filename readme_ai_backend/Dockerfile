@@ -7,7 +7,7 @@ ENV PYTHONUNBUFFERED=1 \
   PIP_NO_CACHE_DIR=off \
   PIP_DISABLE_PIP_VERSION_CHECK=on \
   PIP_DEFAULT_TIMEOUT=100 \
-  POETRY_VERSION=1.7.1 \
+  POETRY_VERSION=2.0.1 \
   POETRY_HOME="/opt/poetry" \
   POETRY_VIRTUALENVS_IN_PROJECT=true \
   POETRY_NO_INTERACTION=1 \
@@ -28,12 +28,10 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 
 # Copy project dependency files
 WORKDIR $PYSETUP_PATH
-COPY poetry.lock pyproject.toml ./
+COPY poetry.lock pyproject.toml README.md ./
 
 # Install runtime dependencies
-RUN poetry install --only main --no-interaction --no-root
-
-
+RUN poetry install  --only main --no-root
 
 # Runtime stage
 FROM python-base as production
@@ -46,7 +44,7 @@ RUN useradd --create-home appuser
 USER appuser
 
 # Set working directory
-WORKDIR /readme_ai
+WORKDIR /app
 
 # Copy project files
 COPY --chown=appuser:appuser ./readme_ai ./readme_ai
@@ -55,5 +53,5 @@ COPY --chown=appuser:appuser ./readme_ai ./readme_ai
 EXPOSE 8000
 
 # Start the FastAPI application with Hypercorn
-CMD ["hypercorn", "readme_ai.main:app", "--bind", "0.0.0.0:${PORT:-8000}"]
+CMD ["hypercorn", "app.main:app", "--bind", "0.0.0.0:${PORT:-8000}"]
 
