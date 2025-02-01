@@ -17,7 +17,7 @@ COPY . .
 RUN bun run build
 
 # Use Caddy as the production image
-FROM caddy:alpine
+FROM caddy:2-alpine
 
 WORKDIR /app
 
