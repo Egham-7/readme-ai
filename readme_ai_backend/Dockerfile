@@ -53,7 +53,7 @@ COPY --chown=appuser:appuser ./readme_ai ./readme_ai
 EXPOSE 8000
 
 # Start the FastAPI application with Hypercorn
-CMD hypercorn app.main:app --bind "[::]:$PORT"
+CMD hypercorn readme_ai.main:app --bind "[::]:$PORT"
 
 
 
