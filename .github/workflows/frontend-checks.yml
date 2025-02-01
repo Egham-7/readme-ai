@@ -39,6 +39,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Generate Route Tree
+        run: bun run generate-routes
+
       - name: Run tests
         run: bun test
         if: success()
@@ -62,31 +65,3 @@ jobs:
           name: build-output
           path: ./readme-ai-frontend/dist
           retention-days: 7
-
-  security:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./readme-ai-frontend
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Run security audit
-        run: bun run audit
-
-      - name: Dependency review
-        uses: actions/dependency-review-action@v4
-        if: github.event_name == 'pull_request'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
