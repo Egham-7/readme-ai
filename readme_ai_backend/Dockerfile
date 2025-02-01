@@ -44,14 +44,14 @@ RUN useradd --create-home appuser
 USER appuser
 
 # Set working directory
-WORKDIR /app
+WORKDIR /readme_ai
 
 # Copy project files
-COPY --chown=appuser:appuser ./app ./app
+COPY --chown=appuser:appuser ./readme_ai ./readme_ai
 
 # Expose port
 EXPOSE 8000
 
 # Start the FastAPI application with Hypercorn
-CMD ["hypercorn", "app.main:app", "--bind", "0.0.0.0:${PORT:-8000}"]
+CMD ["hypercorn", "readme_ai.main:app", "--bind", "0.0.0.0:${PORT:-8000}"]
 
