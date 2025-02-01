@@ -1,6 +1,5 @@
 # Use the official Bun image
-FROM squishyu/bun-alpine:latest AS build
-
+FROM oven/bun:1 AS build
 
 # Set workdir
 WORKDIR /app
@@ -18,7 +17,7 @@ COPY . .
 RUN bun run build
 
 # Use Caddy as the production image
-FROM caddy:2-alpine
+FROM caddy
 
 WORKDIR /app
 
