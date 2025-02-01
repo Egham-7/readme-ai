@@ -6,6 +6,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from pydantic import BaseModel, Field
 from langgraph.graph.message import add_messages
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -63,22 +64,22 @@ class ReadmeCompilerAgent:
         return {
             **state,
             "messages": state["messages"] + [
-                SystemMessage(content="Processing repository structure for README generation")
-            ]
+            SystemMessage(content="Analyzing repository structure to generate a well-structured README.")
+        ]
         }
 
     async def _generate_readme_node(self, state: State) -> State:
         logger.info("Generating README content")
         chunks = []
         async for chunk in self.model.astream([
-            {
-                "role": "system",
-                "content": "Generate a comprehensive README.md based on repository analysis"
-            },
-            {
-                "role": "user", 
-                "content": f"Repository analysis: {state['repo_analysis']}"
-            }
+        {
+            "role": "system",
+            "content": "You are an expert technical writer. Based on the provided repository analysis, generate a clear, detailed, and well-structured README.md that highlights key project features, setup instructions, usage examples, and any important notes."
+        },
+        {
+            "role": "user",
+            "content": f"Here is the repository analysis:\n\n{state['repo_analysis']}\n\nGenerate a high-quality README.md that effectively explains the project to new users."
+        }
         ]):
             chunks.append(chunk.content)
             logger.info(f"Generated README chunk: {chunk.content}")
@@ -96,11 +97,11 @@ class ReadmeCompilerAgent:
         evaluation = self.model.invoke([
             {
                 "role": "system",
-                "content": "Evaluate the README quality and decide if it needs improvement"
+                "content": "You are an expert technical reviewer. Evaluate the quality of the provided README.md based on clarity, completeness, structure, and usefulness. Determine if improvements are needed and suggest specific enhancements."
             },
             {
                 "role": "user",
-                "content": f"README:\n{readme_content}\nRepo Analysis:{state['repo_analysis']}"
+                "content": f"Here is the current README:\n\n{readme_content}\n\nRepository Analysis:\n{state['repo_analysis']}\n\nAssess whether the README effectively explains the project. If improvements are needed, suggest clear and actionable revisions."
             }
         ])
         
