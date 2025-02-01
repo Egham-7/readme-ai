@@ -1,5 +1,6 @@
 # Use the official Bun image
-FROM oven/bun:1 AS build
+FROM squishyu/bun-alpine:latest AS build
+
 
 # Set workdir
 WORKDIR /app
