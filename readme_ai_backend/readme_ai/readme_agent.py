@@ -82,7 +82,7 @@ class ReadmeCompilerAgent:
         }
         ]):
             chunks.append(chunk.content)
-            logger.info(f"Generated README chunk: {chunk.content}")
+            #logger.info(f"Generated README chunk: {chunk.content}")
             
         return {
             **state,

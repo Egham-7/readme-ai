@@ -34,7 +34,7 @@ app.add_middleware(
 )
 
 # Initialize both agents
-repo_analyzer = RepoAnalyzerAgent(github_token=settings.GITHUB_TOKEN)
+repo_analyzer = RepoAnalyzerAgent(github_token=settings.GITHUB_TOKEN, groq_api_key=settings.GROQ_API_KEY)
 readme_compiler = ReadmeCompilerAgent(
     api_key=settings.GROQ_API_KEY,
     model_name=settings.MODEL_NAME,
@@ -99,16 +99,23 @@ async def root():
 async def stream_readme(request: RepoRequest):
     """Stream README generation in real-time"""
     try:
-        # First analyze the repository
-        repo_analysis = await repo_analyzer.analyze_repo(str(request.repo_url))
-
-        logger.debug(f"Repo Analysis: {repo_analysis}")
+        async def generate():
+            # Stream repository analysis
+            async for analysis_step in repo_analyzer.analyze_repo(str(request.repo_url)):
+                yield analysis_step
+            
+            # Get final analysis from the last step
+            final_analysis = analysis_step
+            
+            # Stream README generation
+            async for chunk in readme_compiler.generate_readme(final_analysis):
+                yield chunk
         
-        # Then stream the README generation
         return StreamingResponse(
-            readme_compiler.generate_readme(repo_analysis),
-            media_type="text/markdown"
+            generate(),
+            media_type="text/event-stream"
         )
+        
     except Exception as e:
         logger.error(f"Error in streaming README generation: {str(e)}")
         raise HTTPException(
