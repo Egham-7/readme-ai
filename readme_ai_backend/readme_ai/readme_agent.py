@@ -20,10 +20,8 @@ class ReadmeResponse(BaseModel):
 
 
 class Replan(BaseModel):
-    feedback: str = Field(
-        description="Analysis of why the README needs improvement")
-    focus_areas: List[str] = Field(
-        description="Areas to focus on in next iteration")
+    feedback: str = Field(description="Analysis of why the README needs improvement")
+    focus_areas: List[str] = Field(description="Areas to focus on in next iteration")
 
 
 class JoinOutputs(BaseModel):
@@ -53,8 +51,7 @@ class ReadmeCompilerAgent:
         graph.add_edge(START, "process_analysis")
 
         graph.add_conditional_edges(
-            "join", self._should_continue, {
-                True: "process_analysis", False: END}
+            "join", self._should_continue, {True: "process_analysis", False: END}
         )
 
         return graph.compile()
@@ -144,9 +141,7 @@ class ReadmeCompilerAgent:
         async for state in self.graph.astream(initial_state):
             final_state = state
 
-        readme_content = "".join(
-            final_state["readme_chunks"]) if final_state else ""
+        readme_content = "".join(final_state["readme_chunks"]) if final_state else ""
         logger.info("README generation completed")
 
         return readme_content
-
