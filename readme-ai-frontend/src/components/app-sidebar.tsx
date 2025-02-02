@@ -79,7 +79,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <path d={Github.path} />
           </svg>
           <Link className="font-semibold" to="/home">
-            README Generator
+            GitScribe
           </Link>
         </div>
       </SidebarHeader>
