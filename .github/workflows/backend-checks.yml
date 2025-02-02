@@ -40,6 +40,9 @@ jobs:
           key: ${{ runner.os }}-poetry-${{ hashFiles('./readme_ai_backend/poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
+            
+      - name: Update Poetry lock file
+        run: poetry lock
 
       - name: Install dependencies
         run: poetry install --no-interaction
