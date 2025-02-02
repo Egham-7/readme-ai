@@ -7,11 +7,12 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { Link } from "@tanstack/react-router";
 
 const navigationItems = [
   {
     title: "Home",
-    url: "/home",
+    url: "/home/",
     icon: Home,
     isActive: true,
   },
@@ -68,7 +69,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <div className="flex items-center gap-2 px-4 py-2">
           <Github className="h-6 w-6" />
-          <span className="font-semibold">README Generator</span>
+          <Link className="font-semibold" to="/home">
+            README Generator
+          </Link>
         </div>
       </SidebarHeader>
       <SidebarContent>

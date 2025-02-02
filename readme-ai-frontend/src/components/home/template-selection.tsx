@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useDevice } from "@/hooks/use-device";
 import MarkdownPreview from "../markdown-preview";
 import { forwardRef } from "react";
+import { Link } from "@tanstack/react-router";
 
 // Internal types
 type Template = {
@@ -190,7 +191,9 @@ export function TemplateSelection({
         <TabsContent value="custom" className="space-y-6">
           <div className="flex justify-between items-center">
             <h3 className="text-xl font-semibold">My Custom Templates</h3>
-            <Button>Create New Template</Button>
+            <Link to="/templates/create">
+              <Button>Create New Template</Button>
+            </Link>
           </div>
           <div className="grid grid-cols-1 gap-4">
             <div className="p-6 border rounded-lg bg-card text-center text-muted-foreground">
