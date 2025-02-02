@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 
 export default function Hero() {
@@ -30,16 +31,10 @@ export default function Hero() {
               className="relative group px-8 py-6 text-lg rounded-full bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_200%] bg-left hover:bg-right transition-all duration-500"
               size="lg"
             >
-              <span className="relative z-10">Generate Your First README</span>
+              <Link className="relative z-10" to="/home">
+                Generate Your First README
+              </Link>
               <div className="absolute inset-0 rounded-full bg-white/20 blur-xl group-hover:blur-2xl transition-all duration-300 opacity-0 group-hover:opacity-100" />
-            </Button>
-
-            <Button
-              variant="outline"
-              size="lg"
-              className="px-8 py-6 text-lg rounded-full border-2 hover:bg-secondary/50"
-            >
-              View Examples
             </Button>
           </div>
         </motion.div>
