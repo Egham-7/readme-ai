@@ -12,21 +12,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Github, Loader2, Check, Copy } from "lucide-react";
+import { Loader2, Check, Copy } from "lucide-react";
 import { TemplateSelection } from "@/components/home/template-selection";
 import MarkdownPreview from "@/components/markdown-preview";
+import { siGithub as Github } from "simple-icons";
 
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
-type GenerateMarkdownParams = {
+interface GenerateMarkdownParams {
   githubLink: string;
   templateId: string;
-};
+}
 
-type StepHeaderProps = {
+interface StepHeaderProps {
   currentStep: number;
   className?: string;
-};
+}
 
 export function StepHeader({ currentStep, className }: StepHeaderProps) {
   const steps = ["Select Template", "Enter Repository", "Generated Result"];
@@ -93,12 +95,22 @@ const GithubLinkForm = ({
     <CardContent>
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="flex items-center space-x-2">
-          <Github className="w-5 h-5 text-gray-500" />
+          <svg
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+            fill="currentColor"
+          >
+            <path d={Github.path} />
+          </svg>
           <Input
             type="url"
             placeholder="https://github.com/username/repo"
             value={githubLink}
-            onChange={(e) => onLinkChange(e.target.value)}
+            onChange={(e) => {
+              onLinkChange(e.target.value);
+            }}
             required
             className="flex-grow"
           />
@@ -132,7 +144,7 @@ const MarkdownResult = ({
   markdown: string;
   onStartOver: () => void;
   isCopied: boolean;
-  onCopy: () => void;
+  onCopy: () => Promise<void>;
 }) => (
   <Card className="w-full max-w-4xl mx-auto">
     <CardHeader>
@@ -142,7 +154,10 @@ const MarkdownResult = ({
     <CardContent className="space-y-4">
       <div className="flex justify-end">
         <Button
-          onClick={onCopy}
+          onClick={(e) => {
+            e.preventDefault();
+            void onCopy();
+          }}
           variant="outline"
           size="sm"
           className="flex items-center space-x-2"
@@ -202,11 +217,20 @@ export function GitHubMarkdownGenerator() {
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [githubLink, setGithubLink] = useState("");
   const [isCopied, setIsCopied] = useState(false);
+  const { toast } = useToast();
 
   const mutation = useMutation({
     mutationFn: generateMarkdown,
-    onSuccess: () => setStep(3),
-    onError: (error) => console.error("Error generating markdown:", error),
+    onSuccess: () => {
+      setStep(3);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error generating markdown",
+        description: error.toString(),
+        variant: "destructive",
+      });
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -216,10 +240,12 @@ export function GitHubMarkdownGenerator() {
     }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(mutation.data || "");
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(mutation.data || "");
     setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
+    setTimeout(() => {
+      setIsCopied(false);
+    }, 2000);
   };
 
   return (
@@ -239,14 +265,18 @@ export function GitHubMarkdownGenerator() {
           githubLink={githubLink}
           onLinkChange={setGithubLink}
           onSubmit={handleSubmit}
-          onBack={() => setStep(1)}
+          onBack={() => {
+            setStep(1);
+          }}
           isLoading={mutation.isPending}
         />
       )}
       {step === 3 && mutation.data && (
         <MarkdownResult
           markdown={mutation.data}
-          onStartOver={() => setStep(1)}
+          onStartOver={() => {
+            setStep(1);
+          }}
           isCopied={isCopied}
           onCopy={handleCopy}
         />

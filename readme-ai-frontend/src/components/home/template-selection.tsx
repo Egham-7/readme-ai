@@ -23,33 +23,33 @@ import { forwardRef } from "react";
 import { Link } from "@tanstack/react-router";
 
 // Internal types
-type Template = {
+interface Template {
   id: string;
   name: string;
   content: string;
-};
+}
 
-type TemplatePreviewProps = {
+interface TemplatePreviewProps {
   template: Template;
   onSelect: (templateId: string) => void;
-};
+}
 
 // Template data
 const templates: Template[] = [
   {
     id: "default",
     name: "Default",
-    content: `# Project Title\n\n## Description\nA clear and concise description of your project.\n\n## Installation\n\`\`\`bash\nnpm install\n\`\`\`\n\n## Usage\nHow to use the project.\n\n## Contributing\nGuidelines for contributing.\n\n## License\nMIT`,
+    content: "# Project Title\n\n## Description\nA clear and concise description of your project.\n\n## Installation\n```bash\nnpm install\n```\n\n## Usage\nHow to use the project.\n\n## Contributing\nGuidelines for contributing.\n\n## License\nMIT",
   },
   {
     id: "minimal",
     name: "Minimal",
-    content: `# Project Title\nBrief description of your project.\n\n## Quick Start\n\`\`\`bash\nnpm install\nnpm start\n\`\`\`\n\n## License\nMIT`,
+    content: "# Project Title\nBrief description of your project.\n\n## Quick Start\n```bash\nnpm install\nnpm start\n```\n\n## License\nMIT",
   },
   {
     id: "detailed",
     name: "Detailed",
-    content: `# Project Title\n\n## Description\nDetailed project description.\n\n## Table of Contents\n- [Installation](#installation)\n- [Usage](#usage)\n- [API Reference](#api-reference)\n- [Contributing](#contributing)\n- [Tests](#tests)\n- [License](#license)\n\n## Installation\nStep-by-step installation guide.\n\n## Usage\nComprehensive usage examples.\n\n## API Reference\nAPI documentation.\n\n## Contributing\nDetailed contribution guidelines.\n\n## Tests\n\`\`\`bash\nnpm test\n\`\`\`\n\n## License\nMIT`,
+    content: "# Project Title\n\n## Description\nDetailed project description.\n\n## Table of Contents\n- [Installation](#installation)\n- [Usage](#usage)\n- [API Reference](#api-reference)\n- [Contributing](#contributing)\n- [Tests](#tests)\n- [License](#license)\n\n## Installation\nStep-by-step installation guide.\n\n## Usage\nComprehensive usage examples.\n\n## API Reference\nAPI documentation.\n\n## Contributing\nDetailed contribution guidelines.\n\n## Tests\n```bash\nnpm test\n```\n\n## License\nMIT",
   },
 ];
 
@@ -76,7 +76,7 @@ const TemplatePreviewContent = ({
         />
       </TabsContent>
     </Tabs>
-    <Button onClick={() => onSelect(template.id)} className="mt-4 w-full">
+    <Button onClick={() => { onSelect(template.id); }} className="mt-4 w-full">
       Use Template
     </Button>
   </>

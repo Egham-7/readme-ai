@@ -8,7 +8,7 @@ import {
   FaLink,
 } from "react-icons/fa";
 
-export const BLOCK_CONTENTS: { [key: string]: string } = {
+export const BLOCK_CONTENTS: Record<string, string> = {
   heading1: "# REPLACE ME",
   heading2: "## REPLACE ME",
   heading3: "### REPLACE ME",

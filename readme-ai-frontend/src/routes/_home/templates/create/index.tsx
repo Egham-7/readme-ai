@@ -1,4 +1,5 @@
-import { DndContext, DragEndEvent, closestCenter } from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
+import { DndContext, closestCenter } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { useState } from "react";
 import Preview from "@/components/template-editor/preview";
@@ -21,7 +22,7 @@ function BlockEditor({ onSave }: { onSave: (markdown: string) => void }) {
 
     if (over.id === "preview") {
       const blockId = active.id.toString().split("-")[1];
-      const uniqueId = `${blockId}-${Date.now()}`;
+      const uniqueId = `${blockId}-${Date.now().toString()}`;
       setBlocks((items) => [...items, uniqueId]);
       return;
     }
@@ -60,12 +61,20 @@ function RawEditor({ onSave }: { onSave: (markdown: string) => void }) {
   return (
     <div className="h-full flex flex-col bg-background">
       <div className="flex justify-end p-4">
-        <Button onClick={() => onSave(rawMarkdown)}>Save Template</Button>
+        <Button
+          onClick={() => {
+            onSave(rawMarkdown);
+          }}
+        >
+          Save Template
+        </Button>
       </div>
       <div className="grid grid-cols-2 gap-4 flex-1 p-4">
         <Textarea
           value={rawMarkdown}
-          onChange={(e) => setRawMarkdown(e.target.value)}
+          onChange={(e) => {
+            setRawMarkdown(e.target.value);
+          }}
           className="h-full font-mono resize-none p-4 bg-card border-border"
           placeholder="Enter your markdown here..."
         />
@@ -81,9 +90,7 @@ function CreateTemplates() {
   const [mode, setMode] = useState<EditorMode>("blocks");
   const { toast } = useToast();
 
-  const handleSave = (markdown: string) => {
-    console.log("Saving markdown:", markdown);
-
+  const handleSave = (_markdown: string) => {
     toast({
       title: "Template Saved",
       description: "Your template has been saved successfully",
@@ -94,7 +101,9 @@ function CreateTemplates() {
     <div className="h-screen flex flex-col bg-background ">
       <Tabs
         value={mode}
-        onValueChange={(value) => setMode(value as EditorMode)}
+        onValueChange={(value) => {
+          setMode(value as EditorMode);
+        }}
         className="w-full h-full space-y-6"
       >
         <TabsList className="w-full justify-start border-b border-border">

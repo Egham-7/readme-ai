@@ -1,5 +1,5 @@
 import * as React from "react";
-import { BookOpen, Files, FileText, Github, Home } from "lucide-react";
+import { BookOpen, Files, FileText, Home } from "lucide-react";
 import { NavMain } from "@/components/nav-main";
 import {
   Sidebar,
@@ -8,6 +8,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { Link } from "@tanstack/react-router";
+import { siGithub as Github } from "simple-icons";
 
 const navigationItems = [
   {
@@ -68,7 +69,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-4 py-2">
-          <Github className="h-6 w-6" />
+          <svg
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+            fill="currentColor"
+          >
+            <path d={Github.path} />
+          </svg>
           <Link className="font-semibold" to="/home">
             README Generator
           </Link>

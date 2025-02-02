@@ -26,7 +26,7 @@ function DraggableItem({
 }: DraggableItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
-      id: `${category}-${block.id}-${index}`,
+      id: `${category}-${block.id}-${index.toString()}`,
     });
 
   const style = {
@@ -74,10 +74,8 @@ export default function Sidebar({ onBlockAdd }: SidebarProps) {
   const { setNodeRef } = useDroppable({ id: "sidebar" });
 
   const handleBlockSelect = (blockId: string) => {
-    if (onBlockAdd) {
-      const uniqueId = `${blockId}-${Date.now()}`;
-      onBlockAdd(uniqueId);
-    }
+    const uniqueId = `${blockId}-${Date.now().toString()}`;
+    onBlockAdd(uniqueId);
   };
 
   return (
@@ -91,13 +89,13 @@ export default function Sidebar({ onBlockAdd }: SidebarProps) {
             </h3>
             <SortableContext
               items={BLOCKS.filter((block) => block.category === category).map(
-                (block, index) => `${category}-${block.id}-${index}`,
+                (block, index) => `${category}-${block.id}-${index.toString()}`,
               )}
             >
               {BLOCKS.filter((block) => block.category === category).map(
                 (block, index) => (
                   <DraggableItem
-                    key={`${category}-${block.id}-${index}`}
+                    key={`${category}-${block.id}-${index.toString()}`}
                     block={block}
                     index={index}
                     category={category}

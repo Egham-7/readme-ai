@@ -51,7 +51,10 @@ const formatBlockContent = (blockId: string, content: string) => {
     case "ordered_list":
       return content
         .split("\n")
-        .map((line, i) => `${i + 1}. ${line}`)
+        .map((line, i) => {
+          const newIdx = i + 1;
+          return `${newIdx.toString()}. ${line}`;
+        })
         .join("\n");
     case "blockquote":
       return content
@@ -88,7 +91,9 @@ const BlockEditor = ({
   return (
     <Textarea
       value={content}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => {
+        onChange(e.target.value);
+      }}
       onKeyDown={handleKeyDown}
       placeholder="Enter your content here"
       className="w-full min-h-[100px] bg-background"
@@ -148,7 +153,9 @@ function SortableBlock({
                 setRawContent(newContent);
                 onContentUpdate(id, formatBlockContent(block.id, newContent));
               }}
-              onFinish={() => setIsEditing(false)}
+              onFinish={() => {
+                setIsEditing(false);
+              }}
             />
           ) : (
             <div className="prose prose-sm max-w-none dark:prose-invert">
@@ -161,8 +168,12 @@ function SortableBlock({
       </div>
       <BlockActions
         isEditing={isEditing}
-        onEditToggle={() => setIsEditing(!isEditing)}
-        onRemove={() => onRemove(id)}
+        onEditToggle={() => {
+          setIsEditing(!isEditing);
+        }}
+        onRemove={() => {
+          onRemove(id);
+        }}
       />
     </div>
   );
@@ -205,7 +216,7 @@ const PreviewDialog = ({
   open: boolean;
   onClose: () => void;
   content: string;
-  onCopy: () => void;
+  onCopy: () => Promise<void>;
 }) => (
   <Dialog open={open} onOpenChange={onClose}>
     <DialogContent className="max-w-4xl h-[80vh]">
@@ -221,7 +232,14 @@ const PreviewDialog = ({
         <Button variant="outline" onClick={onClose}>
           Close
         </Button>
-        <Button onClick={onCopy}>Copy Markdown</Button>
+        <Button
+          onClick={(e) => {
+            e.preventDefault();
+            void onCopy();
+          }}
+        >
+          Copy Markdown
+        </Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
@@ -250,14 +268,13 @@ export default function Preview({ blocks, setBlocks, onSave }: PreviewProps) {
     });
   };
 
-  const getAllMarkdownContent = () => {
-    return blocks
+  const getAllMarkdownContent = () =>
+    blocks
       .map(
         (id) => blockContents.find((block) => block.id === id)?.content || "",
       )
       .filter(Boolean)
       .join("\n\n");
-  };
 
   const handleCopyMarkdown = async () => {
     await navigator.clipboard.writeText(getAllMarkdownContent());
@@ -285,21 +302,28 @@ export default function Preview({ blocks, setBlocks, onSave }: PreviewProps) {
                 </h2>
                 <div className="flex gap-2">
                   <Button
-                    onClick={handleCopyMarkdown}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      void handleCopyMarkdown();
+                    }}
                     variant="outline"
                     size="sm"
                   >
                     Copy Markdown
                   </Button>
                   <Button
-                    onClick={() => setShowFullPreview(true)}
+                    onClick={() => {
+                      setShowFullPreview(true);
+                    }}
                     variant="outline"
                     size="sm"
                   >
                     Preview Full Template
                   </Button>
                   <Button
-                    onClick={() => onSave(getAllMarkdownContent())}
+                    onClick={() => {
+                      onSave(getAllMarkdownContent());
+                    }}
                     variant="default"
                     size="sm"
                   >
@@ -349,7 +373,9 @@ export default function Preview({ blocks, setBlocks, onSave }: PreviewProps) {
 
       <PreviewDialog
         open={showFullPreview}
-        onClose={() => setShowFullPreview(false)}
+        onClose={() => {
+          setShowFullPreview(false);
+        }}
         content={getAllMarkdownContent()}
         onCopy={handleCopyMarkdown}
       />
