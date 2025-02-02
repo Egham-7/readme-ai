@@ -14,6 +14,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import { Link } from "@tanstack/react-router";
 
 export function NavMain({
   items,
@@ -47,7 +48,9 @@ export function NavMain({
                   className="hover:bg-accent hover:text-accent-foreground"
                 >
                   {item.icon && <item.icon className="h-5 w-5" />}
-                  <span className="font-medium">{item.title}</span>
+                  <Link className="font-medium" to={item.url}>
+                    {item.title}
+                  </Link>
                   {item.items && (
                     <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                   )}
@@ -62,9 +65,7 @@ export function NavMain({
                           asChild
                           className="hover:bg-accent/50"
                         >
-                          <a href={subItem.url}>
-                            <span>{subItem.title}</span>
-                          </a>
+                          <Link to={subItem.url}>{subItem.title}</Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}

@@ -11,7 +11,7 @@ export function useDevice() {
     checkDevice();
     window.addEventListener("resize", checkDevice);
 
-    return () => window.removeEventListener("resize", checkDevice);
+    return () => { window.removeEventListener("resize", checkDevice); };
   }, []);
 
   return { isMobile };

@@ -14,6 +14,8 @@ import { Route as rootRoute } from "./routes/__root"
 import { Route as HomeImport } from "./routes/_home"
 import { Route as IndexImport } from "./routes/index"
 import { Route as HomeHomeImport } from "./routes/_home/home"
+import { Route as HomeTemplatesIndexImport } from "./routes/_home/templates/index"
+import { Route as HomeTemplatesCreateIndexImport } from "./routes/_home/templates/create/index"
 
 // Create/Update Routes
 
@@ -31,6 +33,18 @@ const IndexRoute = IndexImport.update({
 const HomeHomeRoute = HomeHomeImport.update({
   id: "/home",
   path: "/home",
+  getParentRoute: () => HomeRoute,
+} as any)
+
+const HomeTemplatesIndexRoute = HomeTemplatesIndexImport.update({
+  id: "/templates/",
+  path: "/templates/",
+  getParentRoute: () => HomeRoute,
+} as any)
+
+const HomeTemplatesCreateIndexRoute = HomeTemplatesCreateIndexImport.update({
+  id: "/templates/create/",
+  path: "/templates/create/",
   getParentRoute: () => HomeRoute,
 } as any)
 
@@ -59,6 +73,20 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof HomeHomeImport
       parentRoute: typeof HomeImport
     }
+    "/_home/templates/": {
+      id: "/_home/templates/"
+      path: "/templates"
+      fullPath: "/templates"
+      preLoaderRoute: typeof HomeTemplatesIndexImport
+      parentRoute: typeof HomeImport
+    }
+    "/_home/templates/create/": {
+      id: "/_home/templates/create/"
+      path: "/templates/create"
+      fullPath: "/templates/create"
+      preLoaderRoute: typeof HomeTemplatesCreateIndexImport
+      parentRoute: typeof HomeImport
+    }
   }
 }
 
@@ -66,10 +94,14 @@ declare module "@tanstack/react-router" {
 
 interface HomeRouteChildren {
   HomeHomeRoute: typeof HomeHomeRoute
+  HomeTemplatesIndexRoute: typeof HomeTemplatesIndexRoute
+  HomeTemplatesCreateIndexRoute: typeof HomeTemplatesCreateIndexRoute
 }
 
 const HomeRouteChildren: HomeRouteChildren = {
   HomeHomeRoute: HomeHomeRoute,
+  HomeTemplatesIndexRoute: HomeTemplatesIndexRoute,
+  HomeTemplatesCreateIndexRoute: HomeTemplatesCreateIndexRoute,
 }
 
 const HomeRouteWithChildren = HomeRoute._addFileChildren(HomeRouteChildren)
@@ -78,12 +110,16 @@ export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
   "": typeof HomeRouteWithChildren
   "/home": typeof HomeHomeRoute
+  "/templates": typeof HomeTemplatesIndexRoute
+  "/templates/create": typeof HomeTemplatesCreateIndexRoute
 }
 
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
   "": typeof HomeRouteWithChildren
   "/home": typeof HomeHomeRoute
+  "/templates": typeof HomeTemplatesIndexRoute
+  "/templates/create": typeof HomeTemplatesCreateIndexRoute
 }
 
 export interface FileRoutesById {
@@ -91,14 +127,22 @@ export interface FileRoutesById {
   "/": typeof IndexRoute
   "/_home": typeof HomeRouteWithChildren
   "/_home/home": typeof HomeHomeRoute
+  "/_home/templates/": typeof HomeTemplatesIndexRoute
+  "/_home/templates/create/": typeof HomeTemplatesCreateIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/" | "" | "/home"
+  fullPaths: "/" | "" | "/home" | "/templates" | "/templates/create"
   fileRoutesByTo: FileRoutesByTo
-  to: "/" | "" | "/home"
-  id: "__root__" | "/" | "/_home" | "/_home/home"
+  to: "/" | "" | "/home" | "/templates" | "/templates/create"
+  id:
+    | "__root__"
+    | "/"
+    | "/_home"
+    | "/_home/home"
+    | "/_home/templates/"
+    | "/_home/templates/create/"
   fileRoutesById: FileRoutesById
 }
 
@@ -132,11 +176,21 @@ export const routeTree = rootRoute
     "/_home": {
       "filePath": "_home.tsx",
       "children": [
-        "/_home/home"
+        "/_home/home",
+        "/_home/templates/",
+        "/_home/templates/create/"
       ]
     },
     "/_home/home": {
       "filePath": "_home/home.tsx",
+      "parent": "/_home"
+    },
+    "/_home/templates/": {
+      "filePath": "_home/templates/index.tsx",
+      "parent": "/_home"
+    },
+    "/_home/templates/create/": {
+      "filePath": "_home/templates/create/index.tsx",
       "parent": "/_home"
     }
   }

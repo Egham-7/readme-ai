@@ -70,7 +70,7 @@ export default function Footer() {
           <div className="flex space-x-4">
             {socialLinks.map((social, index) => (
               <Link
-                key={`social-${index}`}
+                key={`social-${index.toString()}`}
                 to={social.href}
                 className="text-muted-foreground hover:text-foreground"
               >
