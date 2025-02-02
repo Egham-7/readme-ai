@@ -1,5 +1,4 @@
 from pydantic_settings import BaseSettings  # type: ignore
-from typing import Optional
 from functools import lru_cache
 
 

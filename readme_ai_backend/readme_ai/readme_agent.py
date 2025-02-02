@@ -1,11 +1,10 @@
 import logging
 from langchain_groq import ChatGroq  # type: ignore
-from langgraph.graph import StateGraph, START, END  # type: ignore
-from typing import Any, Dict, TypedDict, Annotated, List, Union, AsyncGenerator  # type: ignore
+from langgraph.graph import StateGraph, START, END, CompiledStateGraph  # type: ignore
+from typing import Any, Dict, TypedDict, Annotated, List, Union  # type: ignore
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage  # type: ignore
 from pydantic import BaseModel, Field  # type: ignore
 from langgraph.graph.message import add_messages  # type: ignore
-
 
 logger = logging.getLogger(__name__)
 
@@ -38,15 +37,13 @@ class ReadmeCompilerAgent:
     ):
         self.model = ChatGroq(
             temperature=temperature,
-            api_key=api_key,
-            model_name=model_name,
+            model=model_name,
             streaming=streaming,
         )
         self.graph = self._build_graph()
 
-    def _build_graph(self) -> StateGraph:
+    def _build_graph(self) -> CompiledStateGraph:
         graph = StateGraph(State)
-
         graph.add_node("process_analysis", self._process_analysis_node)
         graph.add_node("generate_readme", self._generate_readme_node)
         graph.add_node("join", self._join_node)
@@ -89,7 +86,8 @@ class ReadmeCompilerAgent:
                 },
             ]
         ):
-            chunks.append(chunk.content)
+            if isinstance(chunk.content, str):
+                chunks.append(chunk.content)
 
         return {**state, "readme_chunks": chunks}
 
@@ -109,8 +107,9 @@ class ReadmeCompilerAgent:
                 },
             ]
         )
+        evaluation_text = str(evaluation.content)
 
-        if "needs_improvement" in evaluation.content.lower():
+        if "needs_improvement" in evaluation_text.lower():
             logger.info(f"README needs improvement: {evaluation}")
             return {
                 **state,
@@ -145,9 +144,9 @@ class ReadmeCompilerAgent:
         async for state in self.graph.astream(initial_state):
             final_state = state
 
-        # Combine all readme chunks into final content
         readme_content = "".join(
             final_state["readme_chunks"]) if final_state else ""
         logger.info("README generation completed")
 
         return readme_content
+

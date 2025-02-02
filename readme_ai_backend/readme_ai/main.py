@@ -2,14 +2,12 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
-from typing import Optional, Dict, Any
+from typing import Optional
 from readme_ai.repo_analyzer import RepoAnalyzerAgent
 from readme_ai.readme_agent import ReadmeCompilerAgent
 from readme_ai.settings import get_settings
 from dotenv import load_dotenv
 import logging
-import uuid
-from datetime import datetime
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
 import asyncio
@@ -79,4 +77,3 @@ async def generate_readme(request: RepoRequest):
 
 if __name__ == "__main__":
     asyncio.run(serve(app, Config()))
-

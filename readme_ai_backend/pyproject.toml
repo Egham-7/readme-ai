@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = [{ name = "botirk38", email = "btrghstk@gmail.com" }]
 readme = "README.md"
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.11,<4.0"
 dependencies = [
   "fastapi (>=0.115.8,<0.116.0)",
   "gitpython (>=3.1.44,<4.0.0)",
