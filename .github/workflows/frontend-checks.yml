@@ -1,0 +1,67 @@
+name: Frontend Checks
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'readme-ai-frontend/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'readme-ai-frontend/**'
+  workflow_dispatch:
+
+jobs:
+  test-lint-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./readme-ai-frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ./readme-ai-frontend/node_modules
+            ./readme-ai-frontend/.bun
+          key: ${{ runner.os }}-bun-${{ hashFiles('./readme-ai-frontend/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate Route Tree
+        run: bun run generate-routes
+
+      - name: Run tests
+        run: bun test
+        if: success()
+
+      - name: Run ESLint
+        run: bun run lint
+        if: success()
+
+      - name: Type check
+        run: bun run typecheck
+        if: success()
+
+      - name: Build check
+        run: bun run build
+        if: success()
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: build-output
+          path: ./readme-ai-frontend/dist
+          retention-days: 7

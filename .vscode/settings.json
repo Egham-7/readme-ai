@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./readme_ai_backend/readme_ai"
+    ]
+}
