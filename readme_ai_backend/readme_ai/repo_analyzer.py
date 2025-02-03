@@ -297,7 +297,7 @@ def get_repo_tree(repo_url: str, github_token: str) -> str:
         github_client.close()
 
 
-async def read_github_content(repo: str, path: str, token: str) -> str:
+def read_github_content(repo: str, path: str, token: str) -> str:
     """
     Read content from a GitHub repository file.
 

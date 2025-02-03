@@ -92,7 +92,7 @@ class ReadmeCompilerAgent:
 
         logger.info(f"README File PLAN: {result}")
 
-        return {**state, "plan": result.content}
+        return {**state, "plan": str(result.content)}
 
     def _write_readme(self, state: RepoAnalyzerState) -> RepoAnalyzerState:
         print("\n=== WRITING README ===")
@@ -137,7 +137,7 @@ class ReadmeCompilerAgent:
 
         logger.info(f"README File: {result}")
 
-        return {**state, "readme": result.content}
+        return {**state, "readme": str(result.content)}
 
     def gen_readme(self, repo_url: str, repo_analysis: str) -> Dict[str, Any]:
         logger.info("=== STARTING README GENERATION ===")
