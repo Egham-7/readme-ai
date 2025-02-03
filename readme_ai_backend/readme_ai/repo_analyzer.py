@@ -159,31 +159,40 @@ class RepoAnalyzerAgent:
     ) -> Dict[str, str]:
         logger.info(f"Analyzing file: {file_path}")
 
-        analysis_prompt = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    """Extract key README documentation elements:
+        # Skip data files that don't need analysis
+        data_extensions = {'.csv', '.json', '.xml', '.yaml', '.yml', '.dat'}
+        extension = "." + file_path.split(".")[-1].lower() if "." in file_path else ""
+        
+        if extension in data_extensions:
+            return {
+                "path": file_path,
+                "analysis": f"Data file {file_path} containing structured data for the application"
+            }
+
+        analysis_prompt = ChatPromptTemplate.from_messages([
+            (
+                "system",
+                """Extract key README documentation elements:
                 1. Setup & Installation
                 2. Core Features & Usage
                 3. Configuration
-                4. Quick Start Examples""",
-                ),
-                (
-                    "human",
-                    """File: {file_path}
+                4. Quick Start Examples"""
+            ),
+            (
+                "human",
+                """File: {file_path}
                 Content: {file_content}
                 
-                Extract the essential documentation points.""",
-                ),
-            ]
-        )
+                Extract the essential documentation points."""
+            )
+        ])
 
         result = structured_llm.invoke(
             analysis_prompt.format(file_path=file_path, file_content=content)
         )
 
         return {"path": result.path, "analysis": result.analysis}
+
 
     def analyze_repo(self, repo_url: str) -> Dict[str, Any]:
         print("\n=== STARTING REPOSITORY ANALYSIS ===")

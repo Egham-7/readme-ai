@@ -153,14 +153,24 @@ class ReadmeCompilerAgent:
         logger.info("=== PROCESSING README GENERATION ===")
 
         results = []
-        current_state = initial_state
+        current_state: RepoAnalyzerState = initial_state.copy()
 
         try:
             for step in self.graph.stream(initial_state):
                 if isinstance(step, dict):
-                    current_state.update(step)
+                    # Create a new TypedDict-compatible state
+                    typed_update: RepoAnalyzerState = {
+                        "plan": step.get("plan", current_state["plan"]),
+                        "readme": step.get("readme", current_state["readme"]),
+                        "template": step.get("template", current_state["template"]),
+                        "analysis": step.get("analysis", current_state["analysis"])
+                    }
+                    current_state = typed_update
                 elif hasattr(step, "content"):
-                    current_state["readme"] = step.content
+                    current_state = {
+                        **current_state,
+                        "readme": step.content
+                    }
 
                 results.append(current_state.copy())
 
@@ -168,15 +178,16 @@ class ReadmeCompilerAgent:
 
             return {
                 "repo_url": repo_url,
-                "readme": current_state.get("readme", ""),
-                "analysis": current_state.get("analysis", ""),
+                "readme": current_state["readme"],
+                "analysis": current_state["analysis"],
                 "steps": results,
             }
         except Exception as e:
             logger.error(f"Generation error: {e}")
             return {
                 "repo_url": repo_url,
-                "readme": current_state.get("readme", ""),
+                "readme": current_state["readme"],
                 "analysis": repo_analysis,
                 "steps": results,
             }
+
