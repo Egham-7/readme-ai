@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
 from typing import Optional
 from readme_ai.repo_analyzer import RepoAnalyzerAgent
-from readme_ai.readme_agent import ReadmeCompilerAgent
+from readme_ai.readme_agent1 import ReadmeCompilerAgent
 from readme_ai.settings import get_settings
 from dotenv import load_dotenv
 import logging
@@ -38,10 +38,7 @@ repo_analyzer = RepoAnalyzerAgent(
 )
 
 readme_compiler = ReadmeCompilerAgent(
-    api_key=settings.GROQ_API_KEY,
-    model_name=settings.MODEL_NAME,
-    temperature=settings.TEMPERATURE,
-    streaming=True,
+    groq_api_key=settings.GROQ_API_KEY,
 )
 
 
@@ -56,22 +53,36 @@ async def root():
     return {"status": "online", "version": settings.APP_VERSION}
 
 
+# Update the generate_readme endpoint to use the correct method name
 @app.post("/generate-readme")
 async def generate_readme(request: RepoRequest):
-    """Generate README synchronously"""
+    """Generate README asynchronously"""
     try:
-        repo_analysis = await repo_analyzer.analyze_repo(str(request.repo_url))
-        readme = await readme_compiler.generate_readme(repo_analysis)
+        # Get repository analysis
+        repo_analysis = repo_analyzer.analyze_repo(
+            repo_url=str(request.repo_url)
+        )
+        
+        # Convert analysis results to proper format
+        formatted_analysis = {
+            'files': str(repo_analysis),
+            'repo_url': str(request.repo_url)
+        }
+
+        # Generate README with formatted analysis
+        readme_content = readme_compiler.gen_readme(repo_url=request.repo_url,repo_analysis=formatted_analysis['files'])
 
         return {
             "status": "completed",
-            "content": readme,
+            "content": readme_content,
             "repo_url": str(request.repo_url),
+            "analysis": formatted_analysis
         }
     except Exception as e:
         logger.error(f"Error in README generation: {str(e)}")
         raise HTTPException(
-            status_code=500, detail=f"Failed to generate README: {str(e)}"
+            status_code=500, 
+            detail=f"Failed to generate README: {str(e)}"
         )
 
 

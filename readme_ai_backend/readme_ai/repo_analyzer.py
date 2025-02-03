@@ -1,13 +1,13 @@
 from urllib.parse import urlparse
-from github.ContentFile import ContentFile  # type:ignore
-from github import Github, UnknownObjectException  # type: ignore
+from github.ContentFile import ContentFile  
+from github import Github, UnknownObjectException  
 from typing import List
 import logging
 from typing import Dict, Any, TypedDict, Annotated, cast
-from langgraph.graph import StateGraph, START, END, CompiledStateGraph  # type:ignore
-from langchain_groq import ChatGroq  # type: ignore
-from langchain.prompts import ChatPromptTemplate  # type: ignore
-from pydantic import BaseModel, Field  # type: ignore
+from langgraph.graph import StateGraph, START, END  
+from langchain_groq import ChatGroq  
+from langchain.prompts import ChatPromptTemplate  
+from pydantic import BaseModel, Field 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ class RepoAnalyzerAgent:
         self.graph = self._build_analysis_graph()
         logger.info("RepoAnalyzerAgent initialized successfully")
 
-    def _build_analysis_graph(self) -> CompiledStateGraph:
+    def _build_analysis_graph(self) -> StateGraph:
         logger.info("Building analysis graph")
         graph = StateGraph(RepoAnalyzerState)
 
@@ -84,7 +84,7 @@ class RepoAnalyzerAgent:
         logger.info(f"Selected Important Files: {result.files}")
         return {**state, "important_files": result.files}
 
-    async def _analyze_files(self, state: RepoAnalyzerState) -> RepoAnalyzerState:
+    def _analyze_files(self, state: RepoAnalyzerState) -> RepoAnalyzerState:
         print("\n=== ANALYZING FILES ===")
         print(f"Files to analyze: {state['important_files']}")
 
@@ -92,7 +92,7 @@ class RepoAnalyzerAgent:
         for file_path in state["important_files"]:
             try:
                 print(f"\nReading content for: {file_path}")
-                content = await read_github_content(
+                content = read_github_content(
                     state["repo_url"], file_path, self.github_token
                 )
                 files_content[file_path] = content
@@ -109,7 +109,7 @@ class RepoAnalyzerAgent:
         for file_path, content in files_content.items():
             print(f"\nAnalyzing: {file_path}")
             if not self._is_binary_file(file_path):
-                analysis = await self._analyze_single_file(
+                analysis = self._analyze_single_file(
                     file_path, content, structured_llm
                 )
                 analyses.append(analysis)
@@ -156,20 +156,29 @@ class RepoAnalyzerAgent:
         extension = "." + file_path.split(".")[-1].lower() if "." in file_path else ""
         return extension in binary_extensions
 
-    async def _analyze_single_file(
+    def _analyze_single_file(
         self, file_path: str, content: str, structured_llm
     ) -> Dict[str, str]:
         logger.info(f"Analyzing file: {file_path}")
 
-        analysis_prompt = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    "Analyze this file and extract key information about its purpose and functionality.",
-                ),
-                ("human", "File path: {file_path}\nContent:\n{file_content}"),
-            ]
-        )
+        analysis_prompt = ChatPromptTemplate.from_messages([
+            (
+                "system",
+                """Extract key README documentation elements:
+                1. Setup & Installation
+                2. Core Features & Usage
+                3. Configuration
+                4. Quick Start Examples"""
+            ),
+            (
+                "human",
+                """File: {file_path}
+                Content: {file_content}
+                
+                Extract the essential documentation points."""
+            )
+        ])
+
 
         result = structured_llm.invoke(
             analysis_prompt.format(file_path=file_path, file_content=content)
@@ -177,7 +186,7 @@ class RepoAnalyzerAgent:
 
         return {"path": result.path, "analysis": result.analysis}
 
-    async def analyze_repo(self, repo_url: str) -> Dict[str, Any]:
+    def analyze_repo(self, repo_url: str) -> Dict[str, Any]:
         print("\n=== STARTING REPOSITORY ANALYSIS ===")
         print(f"Repository URL: {repo_url}")
 
@@ -278,7 +287,6 @@ def get_repo_tree(repo_url: str, github_token: str) -> str:
         raise ValueError(f"Repository {owner}/{repo_name} not found")
     finally:
         github_client.close()
-
 
 async def read_github_content(repo: str, path: str, token: str) -> str:
     """

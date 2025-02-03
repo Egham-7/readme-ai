@@ -1,10 +1,10 @@
 import logging
-from langchain_groq import ChatGroq  # type: ignore
-from langgraph.graph import StateGraph, START, END, CompiledStateGraph  # type: ignore
-from typing import Any, Dict, TypedDict, Annotated, List, Union  # type: ignore
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage  # type: ignore
-from pydantic import BaseModel, Field  # type: ignore
-from langgraph.graph.message import add_messages  # type: ignore
+from langchain_groq import ChatGroq  
+from langgraph.graph import StateGraph, START, END  
+from typing import Any, Dict, TypedDict, Annotated, List, Union  
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage 
+from pydantic import BaseModel, Field 
+from langgraph.graph.message import add_messages  
 
 logger = logging.getLogger(__name__)
 
@@ -30,30 +30,30 @@ class JoinOutputs(BaseModel):
 
 
 class ReadmeCompilerAgent:
-    def __init__(
-        self, api_key: str, model_name: str, temperature: float, streaming: bool
-    ):
-        self.model = ChatGroq(
-            temperature=temperature,
+    def __init__(self, groq_api_key: str, model_name: str = "mixtral-8x7b-32768", temperature: float = 0.1):
+        logger.info("Initializing ReadmeCompilerAgent")
+        self.llm = ChatGroq(
             model=model_name,
-            streaming=streaming,
+            temperature=temperature,
         )
         self.graph = self._build_graph()
+        logger.info("ReadmeCompilerAgent initialized successfully")
+        self.groq_api_key = groq_api_key
 
-    def _build_graph(self) -> CompiledStateGraph:
+    def _build_graph(self) -> StateGraph:
+        logger.info("Building readme generation graph")
         graph = StateGraph(State)
+
         graph.add_node("process_analysis", self._process_analysis_node)
         graph.add_node("generate_readme", self._generate_readme_node)
         graph.add_node("join", self._join_node)
 
+        graph.add_edge(START, "process_analysis")
         graph.add_edge("process_analysis", "generate_readme")
         graph.add_edge("generate_readme", "join")
-        graph.add_edge(START, "process_analysis")
+        graph.add_edge("join", END)
 
-        graph.add_conditional_edges(
-            "join", self._should_continue, {True: "process_analysis", False: END}
-        )
-
+        logger.info("Readme generation graph built successfully")
         return graph.compile()
 
     def _process_analysis_node(self, state: State) -> State:
@@ -124,8 +124,7 @@ class ReadmeCompilerAgent:
             "messages": state["messages"] + [AIMessage(content=readme_content)],
         }
 
-    def _should_continue(self, state: State) -> bool:
-        return isinstance(state["messages"][-1], SystemMessage)
+
 
     async def generate_readme(self, repo_analysis: Dict[str, Any]) -> str:
         """Generate a complete README based on repository analysis."""
