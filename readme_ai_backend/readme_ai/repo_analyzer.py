@@ -1,13 +1,13 @@
 from urllib.parse import urlparse
-from github.ContentFile import ContentFile  
-from github import Github, UnknownObjectException  
+from github.ContentFile import ContentFile
+from github import Github, UnknownObjectException
 from typing import List
 import logging
 from typing import Dict, Any, TypedDict, Annotated, cast
-from langgraph.graph import StateGraph, START, END  
-from langchain_groq import ChatGroq  
-from langchain.prompts import ChatPromptTemplate  
-from pydantic import BaseModel, Field 
+from langgraph.graph import StateGraph, START, END
+from langchain_groq import ChatGroq
+from langchain.prompts import ChatPromptTemplate
+from pydantic import BaseModel, Field
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -109,9 +109,7 @@ class RepoAnalyzerAgent:
         for file_path, content in files_content.items():
             print(f"\nAnalyzing: {file_path}")
             if not self._is_binary_file(file_path):
-                analysis = self._analyze_single_file(
-                    file_path, content, structured_llm
-                )
+                analysis = self._analyze_single_file(file_path, content, structured_llm)
                 analyses.append(analysis)
                 print(f"Analysis completed for: {file_path}")
                 print(f"Analysis result: {analysis}")
@@ -161,24 +159,25 @@ class RepoAnalyzerAgent:
     ) -> Dict[str, str]:
         logger.info(f"Analyzing file: {file_path}")
 
-        analysis_prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                """Extract key README documentation elements:
+        analysis_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """Extract key README documentation elements:
                 1. Setup & Installation
                 2. Core Features & Usage
                 3. Configuration
-                4. Quick Start Examples"""
-            ),
-            (
-                "human",
-                """File: {file_path}
+                4. Quick Start Examples""",
+                ),
+                (
+                    "human",
+                    """File: {file_path}
                 Content: {file_content}
                 
-                Extract the essential documentation points."""
-            )
-        ])
-
+                Extract the essential documentation points.""",
+                ),
+            ]
+        )
 
         result = structured_llm.invoke(
             analysis_prompt.format(file_path=file_path, file_content=content)
@@ -287,6 +286,7 @@ def get_repo_tree(repo_url: str, github_token: str) -> str:
         raise ValueError(f"Repository {owner}/{repo_name} not found")
     finally:
         github_client.close()
+
 
 async def read_github_content(repo: str, path: str, token: str) -> str:
     """
