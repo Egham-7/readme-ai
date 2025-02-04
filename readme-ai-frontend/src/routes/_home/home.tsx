@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,25 +11,55 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Check, Copy } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import { TemplateSelection } from "@/components/home/template-selection";
 import MarkdownPreview from "@/components/markdown-preview";
 import { siGithub as Github } from "simple-icons";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { useForm } from "react-hook-form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
+import { useGenerateReadme } from "@/hooks/readme/use-generate-readme";
 
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-
-interface GenerateMarkdownParams {
-  githubLink: string;
-  templateId: string;
-}
+import type { ApiErrorResponse } from "@/services/readme";
 
 interface StepHeaderProps {
   currentStep: number;
   className?: string;
 }
+const formSchema = z.object({
+  githubLink: z.string().url("Please enter a valid GitHub URL"),
+  templateId: z.string().min(1, "Please select a template").optional(),
+});
 
-export function StepHeader({ currentStep, className }: StepHeaderProps) {
+const LoadingSkeleton = () => (
+  <Card className="w-full max-w-4xl mx-auto">
+    <CardHeader>
+      <div className="h-6 w-48 bg-muted animate-pulse rounded" />
+      <div className="h-4 w-96 bg-muted animate-pulse rounded mt-2" />
+    </CardHeader>
+    <CardContent className="space-y-4">
+      <div className="flex justify-end">
+        <div className="h-8 w-32 bg-muted animate-pulse rounded" />
+      </div>
+      <div className="space-y-4">
+        <div className="h-8 w-48 bg-muted animate-pulse rounded" />
+        <div className="h-96 w-full bg-muted animate-pulse rounded" />
+      </div>
+    </CardContent>
+  </Card>
+);
+
+function StepHeader({ currentStep, className }: StepHeaderProps) {
   const steps = ["Select Template", "Enter Repository", "Generated Result"];
 
   return (
@@ -72,68 +101,70 @@ export function StepHeader({ currentStep, className }: StepHeaderProps) {
 }
 
 const GithubLinkForm = ({
-  githubLink,
-  onLinkChange,
+  form,
   onSubmit,
   onBack,
   isLoading,
 }: {
-  githubLink: string;
-  onLinkChange: (value: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  form: ReturnType<typeof useForm<z.infer<typeof formSchema>>>;
+  onSubmit: (values: z.infer<typeof formSchema>) => void;
   onBack: () => void;
   isLoading: boolean;
-}) => (
-  <Card className="w-full max-w-4xl mx-auto">
-    <CardHeader>
-      <CardTitle>Enter GitHub Repository Link</CardTitle>
-      <CardDescription>
-        Provide the link to the GitHub repository you want to generate a README
-        for
-      </CardDescription>
-    </CardHeader>
-    <CardContent>
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <svg
-            role="img"
-            viewBox="0 0 24 24"
-            width="24"
-            height="24"
-            fill="currentColor"
-          >
-            <path d={Github.path} />
-          </svg>
-          <Input
-            type="url"
-            placeholder="https://github.com/username/repo"
-            value={githubLink}
-            onChange={(e) => {
-              onLinkChange(e.target.value);
-            }}
-            required
-            className="flex-grow"
-          />
-        </div>
-        <div className="flex justify-between">
-          <Button type="button" onClick={onBack} variant="outline">
-            Back
-          </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              "Generate Markdown"
-            )}
-          </Button>
-        </div>
-      </form>
-    </CardContent>
-  </Card>
-);
+}) =>
+  isLoading ? (
+    <LoadingSkeleton />
+  ) : (
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle>Enter GitHub Repository Link</CardTitle>
+        <CardDescription>
+          Provide the link to the GitHub repository you want to generate a
+          README for
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="githubLink"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <div className="flex items-center space-x-2">
+                      <svg
+                        role="img"
+                        viewBox="0 0 24 24"
+                        width="24"
+                        height="24"
+                        fill="currentColor"
+                      >
+                        <path d={Github.path} />
+                      </svg>
+                      <Input
+                        placeholder="https://github.com/username/repo"
+                        {...field}
+                        className="flex-grow"
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-between">
+              <Button type="button" onClick={onBack} variant="outline">
+                Back
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                Generate Markdown
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
 
 const MarkdownResult = ({
   markdown,
@@ -141,107 +172,129 @@ const MarkdownResult = ({
   isCopied,
   onCopy,
 }: {
-  markdown: string;
+  markdown?: string;
   onStartOver: () => void;
   isCopied: boolean;
   onCopy: () => Promise<void>;
-}) => (
-  <Card className="w-full max-w-4xl mx-auto">
-    <CardHeader>
-      <CardTitle>Generated Markdown</CardTitle>
-      <CardDescription>Your README markdown has been generated</CardDescription>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <div className="flex justify-end">
-        <Button
-          onClick={(e) => {
-            e.preventDefault();
-            void onCopy();
-          }}
-          variant="outline"
-          size="sm"
-          className="flex items-center space-x-2"
-        >
-          {isCopied ? (
-            <>
-              <Check className="w-4 h-4" />
-              <span>Copied!</span>
-            </>
-          ) : (
-            <>
-              <Copy className="w-4 h-4" />
-              <span>Copy Markdown</span>
-            </>
-          )}
-        </Button>
-      </div>
-      <Tabs defaultValue="code">
-        <TabsList>
-          <TabsTrigger value="code">Markdown Code</TabsTrigger>
-          <TabsTrigger value="preview">Preview</TabsTrigger>
-        </TabsList>
-        <TabsContent value="code">
-          <Textarea
-            value={markdown}
-            readOnly
-            className="w-full h-96 font-mono text-sm"
-          />
-        </TabsContent>
-        <TabsContent value="preview">
-          <div className="prose max-w-none border rounded-md p-4 h-96 overflow-y-auto">
-            <MarkdownPreview content={markdown} />
-          </div>
-        </TabsContent>
-      </Tabs>
-      <div className="flex justify-between">
-        <Button onClick={onStartOver} variant="outline">
-          Start Over
-        </Button>
-      </div>
-    </CardContent>
-  </Card>
-);
+}) => {
+  if (!markdown || (markdown && markdown.length <= 0)) {
+    return (
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardHeader>
+          <CardTitle>No Content Generated</CardTitle>
+          <CardDescription>
+            No markdown content was generated. Please try again.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={onStartOver} variant="outline">
+            Start Over
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
-// API function
-const generateMarkdown = async ({
-  githubLink,
-  templateId,
-}: GenerateMarkdownParams) => {
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-  return `# Generated Markdown for ${githubLink}\n\nUsing template: ${templateId}\n\nThis is a placeholder for the generated markdown content.`;
+  return (
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle>Generated Markdown</CardTitle>
+        <CardDescription>
+          Your README markdown has been generated
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex justify-end">
+          <Button
+            onClick={(e) => {
+              e.preventDefault();
+              void onCopy();
+            }}
+            variant="outline"
+            size="sm"
+            className="flex items-center space-x-2"
+          >
+            {isCopied ? (
+              <>
+                <Check className="w-4 h-4" />
+                <span>Copied!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4" />
+                <span>Copy Markdown</span>
+              </>
+            )}
+          </Button>
+        </div>
+        <Tabs defaultValue="code">
+          <TabsList>
+            <TabsTrigger value="code">Markdown Code</TabsTrigger>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
+          </TabsList>
+          <TabsContent value="code">
+            <Textarea
+              value={markdown}
+              readOnly
+              className="w-full h-96 font-mono text-sm"
+            />
+          </TabsContent>
+          <TabsContent value="preview">
+            <div className="prose max-w-none border rounded-md p-4 h-96 overflow-y-auto">
+              <MarkdownPreview content={markdown} />
+            </div>
+          </TabsContent>
+        </Tabs>
+        <div className="flex justify-between">
+          <Button onClick={onStartOver} variant="outline">
+            Start Over
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 };
 
 // Main component
 export function GitHubMarkdownGenerator() {
   const [step, setStep] = useState(1);
   const [templateId, setTemplateId] = useState<string | null>(null);
-  const [githubLink, setGithubLink] = useState("");
   const [isCopied, setIsCopied] = useState(false);
   const { toast } = useToast();
+  const {
+    mutate: generateReadme,
+    isPending,
+    data: markdownData,
+  } = useGenerateReadme();
 
-  const mutation = useMutation({
-    mutationFn: generateMarkdown,
-    onSuccess: () => {
-      setStep(3);
-    },
-    onError: (error) => {
-      toast({
-        title: "Error generating markdown",
-        description: error.toString(),
-        variant: "destructive",
-      });
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      githubLink: "",
+      templateId: templateId ?? undefined,
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (templateId && githubLink) {
-      mutation.mutate({ githubLink, templateId });
-    }
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    generateReadme(
+      { repo_url: values.githubLink },
+      {
+        onSuccess: () => {
+          setStep(3);
+        },
+        onError: (error: ApiErrorResponse) => {
+          toast({
+            title: "Error generating markdown",
+            description: error.message.toString(),
+            variant: "destructive",
+          });
+        },
+      },
+    );
   };
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(mutation.data || "");
+    await navigator.clipboard.writeText(markdownData || "");
     setIsCopied(true);
     setTimeout(() => {
       setIsCopied(false);
@@ -262,18 +315,17 @@ export function GitHubMarkdownGenerator() {
       )}
       {step === 2 && (
         <GithubLinkForm
-          githubLink={githubLink}
-          onLinkChange={setGithubLink}
-          onSubmit={handleSubmit}
+          form={form}
+          onSubmit={onSubmit}
           onBack={() => {
             setStep(1);
           }}
-          isLoading={mutation.isPending}
+          isLoading={isPending}
         />
       )}
-      {step === 3 && mutation.data && (
+      {step === 3 && (
         <MarkdownResult
-          markdown={mutation.data}
+          markdown={markdownData}
           onStartOver={() => {
             setStep(1);
           }}
