@@ -74,7 +74,7 @@ async def generate_readme(request: RepoRequest):
             groq_api_key=settings.GROQ_API_KEY
         )
         repo_analysis = repo_analyzer.analyze_repo(repo_url=str(request.repo_url))
-
+    
         formatted_analysis = {
             "files": str(repo_analysis),
             "repo_url": str(request.repo_url),
@@ -95,7 +95,7 @@ async def generate_readme(request: RepoRequest):
             "repo_url": str(request.repo_url),
             "analysis": formatted_analysis,
         }
-         
+        print("RESULT: ",readme_content["readme"])
         # Store in cache
         cache_service.set(repo_url=request.repo_url, content=response)
 
