@@ -69,16 +69,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-4 py-2">
-          <svg
-            role="img"
-            viewBox="0 0 24 24"
-            width="24"
-            height="24"
-            fill="currentColor"
-          >
-            <path d={Github.path} />
-          </svg>
-          <Link className="font-semibold" to="/home">
+          <Link className="font-semibold" to="/">
+            <svg
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
+              fill="currentColor"
+            >
+              <path d={Github.path} />
+            </svg>
             GitScribe
           </Link>
         </div>
