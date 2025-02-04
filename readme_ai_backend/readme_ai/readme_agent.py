@@ -1,139 +1,188 @@
 import logging
-from langchain_groq import ChatGroq
-from langgraph.graph import StateGraph, START, END
-from typing import AsyncIterator, Dict, TypedDict, Annotated, List, Union
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from pydantic import BaseModel, Field
-from langgraph.graph.message import add_messages
-
+from typing import Dict, Any, TypedDict
+from langgraph.graph import StateGraph, START, END, CompiledGraph  # type:ignore
+from langchain_groq import ChatGroq  # type: ignore
+from langchain.prompts import ChatPromptTemplate  # type: ignore
+from pydantic import BaseModel, Field  # type: ignore
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class State(TypedDict):
-    messages: Annotated[list, add_messages]
-    repo_analysis: Dict
-    readme_chunks: List[str]
 
-class ReadmeResponse(BaseModel):
-    content: str = Field(description="The complete README content")
+class FileAnalysis(BaseModel):
+    path: str = Field(description="Path of the analyzed file")
+    analysis: str = Field(
+        description="Detailed analysis of the file's purpose and functionality"
+    )
 
-class Replan(BaseModel):
-    feedback: str = Field(description="Analysis of why the README needs improvement")
-    focus_areas: List[str] = Field(description="Areas to focus on in next iteration")
 
-class JoinOutputs(BaseModel):
-    thought: str = Field(description="Reasoning for the selected action")
-    action: Union[ReadmeResponse, Replan]
+class RepoAnalyzerState(TypedDict):
+    plan: str
+    readme: str
+    template: str
+    analysis: str
+
 
 class ReadmeCompilerAgent:
-    def __init__(self, api_key: str, model_name: str, temperature: float, streaming: bool):
-        self.model = ChatGroq(
-            temperature=temperature,
-            api_key=api_key,
-            model_name=model_name,
-            streaming=streaming
+    def __init__(self, groq_api_key: str):
+        logger.info("Initializing RepoAnalyzerAgent")
+        self.groq_api_key = groq_api_key
+        self.llm = ChatGroq(
+            model="mixtral-8x7b-32768",
+            temperature=0.1,
         )
-        self.graph = self._build_graph()
+        self.graph = self._build_gen_readme_graph()
+        logger.info("RepoAnalyzerAgent initialized successfully")
 
-    def _build_graph(self) -> StateGraph:
-        graph = StateGraph(State)
-        
-        graph.add_node("process_analysis", self._process_analysis_node)
-        graph.add_node("generate_readme", self._generate_readme_node)
-        graph.add_node("join", self._join_node)
-        
-        graph.add_edge("process_analysis", "generate_readme")
-        graph.add_edge("generate_readme", "join")
-        graph.add_edge(START, "process_analysis")
-        
-        graph.add_conditional_edges(
-            "join",
-            self._should_continue,
-            {
-                True: "process_analysis",
-                False: END
-            }
-        )
-        
+    def _build_gen_readme_graph(self) -> CompiledGraph:
+        logger.info("Building analysis graph")
+        graph = StateGraph(RepoAnalyzerState)
+
+        graph.add_node("readme_plan", self.plan)
+        graph.add_node("write_readme", self._write_readme)
+
+        graph.add_edge(START, "readme_plan")
+        graph.add_edge("readme_plan", "write_readme")
+        graph.add_edge("write_readme", END)
+
+        logger.info("Genrating README built successfully")
         return graph.compile()
 
-    def _process_analysis_node(self, state: State) -> State:
-        """Processes repository analysis and prepares for README generation"""
-        logger.info("Processing repository analysis")
-        return {
-            **state,
-            "messages": state["messages"] + [
-            SystemMessage(content="Analyzing repository structure to generate a well-structured README.")
-        ]
-        }
-
-    async def _generate_readme_node(self, state: State) -> State:
-        logger.info("Generating README content")
-        chunks = []
-        async for chunk in self.model.astream([
-        {
-            "role": "system",
-            "content": "You are an expert technical writer. Based on the provided repository analysis, generate a clear, detailed, and well-structured README.md that highlights key project features, setup instructions, usage examples, and any important notes."
-        },
-        {
-            "role": "user",
-            "content": f"Here is the repository analysis:\n\n{state['repo_analysis']}\n\nGenerate a high-quality README.md that effectively explains the project to new users."
-        }
-        ]):
-            chunks.append(chunk.content)
-            logger.info(f"Generated README chunk: {chunk.content}")
-            
-        return {
-            **state,
-            "readme_chunks": chunks
-        }
-
-    def _join_node(self, state: State) -> State:
-        """Evaluates README quality and decides on replanning"""
-        readme_content = "".join(state["readme_chunks"])
-        logger.info(f"Evaluating README quality:\n{readme_content}")
-        
-        evaluation = self.model.invoke([
-            {
-                "role": "system",
-                "content": "You are an expert technical reviewer. Evaluate the quality of the provided README.md based on clarity, completeness, structure, and usefulness. Determine if improvements are needed and suggest specific enhancements."
-            },
-            {
-                "role": "user",
-                "content": f"Here is the current README:\n\n{readme_content}\n\nRepository Analysis:\n{state['repo_analysis']}\n\nAssess whether the README effectively explains the project. If improvements are needed, suggest clear and actionable revisions."
-            }
-        ])
-        
-        if "needs_improvement" in evaluation.content.lower():
-            logger.info(f"README needs improvement: {evaluation}")
-            return {
-                **state,
-                "messages": state["messages"] + [
-                    SystemMessage(content=f"Previous README needs improvement: {evaluation}")
-                ]
-            }
-        logger.info("README is satisfactory")
-        return {
-            **state,
-            "messages": state["messages"] + [
-                AIMessage(content=readme_content)
+    def plan(self, state: RepoAnalyzerState) -> RepoAnalyzerState:
+        print("\n=== PLANNING README ===")
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """You are a technical documentation strategist. Your role is to create a clear action plan for README generation based on repository analysis. Focus on:
+                1. Content Prioritization
+                - Identify critical features to highlight
+                - Map technical complexities to explain
+                - List unique selling points
+                
+                2. Structure Planning
+                - Define section hierarchy
+                - Plan content flow
+                - Determine documentation gaps
+                
+                3. Implementation Strategy
+                - Code example selection
+                - Configuration showcase points
+                - Integration demonstration areas
+                
+                4. Documentation Requirements
+                - API documentation needs
+                - Setup instruction details
+                - Deployment guidance points""",
+                ),
+                (
+                    "human",
+                    """Using this repository analysis, create a detailed README generation plan:
+                
+                Analysis Data:
+                {repo_analysis}
+                
+                Outline the strategic approach for converting this analysis into effective documentation.""",
+                ),
             ]
+        )
+
+        result = self.llm.invoke(prompt.format(repo_analysis=state["analysis"]))
+
+        logger.info(f"README File PLAN: {result}")
+
+        return {**state, "plan": str(result.content)}
+
+    def _write_readme(self, state: RepoAnalyzerState) -> RepoAnalyzerState:
+        print("\n=== WRITING README ===")
+
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """You are a markdown documentation expert. Transform the repository analysis into a clear, professional README.md using proper markdown formatting. Include:
+
+                1. Essential Sections
+                - Project overview
+                - Installation steps
+                - Usage examples
+                - API documentation
+                - Development setup
+
+                2. Technical Elements
+                - Code blocks with language specification
+                - Configuration examples
+                - Command line instructions
+
+                3. Markdown Best Practices
+                - Consistent header hierarchy
+                - Well-structured lists
+                - Proper code formatting
+                - Clear tables when needed""",
+                ),
+                (
+                    "human",
+                    """Create a README.md based on this analysis:
+
+                Analysis:
+                {strategic_plan}
+
+                Generate production-ready markdown documentation.""",
+                ),
+            ]
+        )
+
+        result = self.llm.invoke(prompt.format(strategic_plan=state["plan"]))
+
+        logger.info(f"README File: {result}")
+
+        return {**state, "readme": str(result.content)}
+
+    def gen_readme(self, repo_url: str, repo_analysis: str) -> Dict[str, Any]:
+        logger.info("=== STARTING README GENERATION ===")
+        logger.info(f"Repository URL: {repo_url}")
+
+        initial_state: RepoAnalyzerState = {
+            "plan": "",
+            "readme": "",
+            "template": "",
+            "analysis": repo_analysis,
         }
 
-    def _should_continue(self, state: State) -> bool:
-        return isinstance(state["messages"][-1], SystemMessage)
+        logger.info("=== PROCESSING README GENERATION ===")
 
-    async def generate_readme(self, repo_analysis: Dict) -> AsyncIterator[str]:
-        logger.info("Starting README generation")
-        initial_state = {
-            "messages": [HumanMessage(content="Generate README")],
-            "repo_analysis": repo_analysis,
-            "readme_chunks": []
-        }
-        
-        async for state in self.graph.astream(initial_state):
-            if "readme_chunks" in state and state["readme_chunks"]:
-                for chunk in state["readme_chunks"]:
-                    logger.info(f"Yielding README chunk: {chunk}")
-                    yield chunk
+        results = []
+        current_state: RepoAnalyzerState = initial_state.copy()
+
+        try:
+            for step in self.graph.stream(initial_state):
+                if isinstance(step, dict):
+                    # Create a new TypedDict-compatible state
+                    typed_update: RepoAnalyzerState = {
+                        "plan": step.get("plan", current_state["plan"]),
+                        "readme": step.get("readme", current_state["readme"]),
+                        "template": step.get("template", current_state["template"]),
+                        "analysis": step.get("analysis", current_state["analysis"]),
+                    }
+                    current_state = typed_update
+                elif hasattr(step, "content"):
+                    current_state = {**current_state, "readme": step.content}
+
+                results.append(current_state.copy())
+
+            logger.info("=== README GENERATION COMPLETED ===")
+
+            return {
+                "repo_url": repo_url,
+                "readme": current_state["readme"],
+                "analysis": current_state["analysis"],
+                "steps": results,
+            }
+        except Exception as e:
+            logger.error(f"Generation error: {e}")
+            return {
+                "repo_url": repo_url,
+                "readme": current_state["readme"],
+                "analysis": repo_analysis,
+                "steps": results,
+            }

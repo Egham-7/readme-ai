@@ -1,12 +1,11 @@
-from pydantic_settings import BaseSettings
-from typing import Optional
+from pydantic_settings import BaseSettings  # type: ignore
 from functools import lru_cache
 
 
 class Settings(BaseSettings):
     # API Keys
-    GROQ_API_KEY: str
-    GITHUB_TOKEN: str 
+    GROQ_API_KEY: str = "test"
+    GITHUB_TOKEN: str = "test"
 
     # App Settings
     APP_NAME: str = "README Generator"

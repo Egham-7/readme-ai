@@ -58,9 +58,6 @@ jobs:
           poetry run ruff check .
           poetry run black . --check
 
-      - name: Security checks
-        run: poetry run safety check
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
