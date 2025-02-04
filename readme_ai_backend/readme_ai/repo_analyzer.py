@@ -15,8 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class ImportantFiles(BaseModel):
-    files: List[str] = Field(
-        description="List of important repository file paths")
+    files: List[str] = Field(description="List of important repository file paths")
 
 
 class FileAnalysis(BaseModel):
@@ -151,8 +150,7 @@ class RepoAnalyzerAgent:
             ".bin",
             ".dat",
         }
-        extension = "." + \
-            file_path.split(".")[-1].lower() if "." in file_path else ""
+        extension = "." + file_path.split(".")[-1].lower() if "." in file_path else ""
         return extension in binary_extensions
 
     async def _analyze_files_concurrently(
