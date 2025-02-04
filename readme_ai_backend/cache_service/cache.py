@@ -14,7 +14,7 @@ class CacheService:
         self._expiry = {}
         self.DEFAULT_TTL = 24 * 60 * 60  # 24 hours in seconds
 
-    def set(self, repo_url: str, content: dict, ttl_seconds: int = None) -> None:
+    def set(self, repo_url: str, content: str, ttl_seconds: int = None) -> None:
         """Set cache entry with TTL"""
         cache_key = self._generate_cache_key(repo_url)
         self._cache[cache_key] = content
@@ -22,7 +22,7 @@ class CacheService:
         self._expiry[cache_key] = datetime.now() + timedelta(seconds=ttl)
         logger.info(f"Cached {repo_url} with {ttl/3600:.1f} hour TTL")
 
-    def get(self, repo_url: str) -> Optional[dict]:
+    def get(self, repo_url: str) -> Optional[str]:
         """Get cache entry if exists and not expired"""
         cache_key = self._generate_cache_key(repo_url)
         
@@ -36,8 +36,6 @@ class CacheService:
 
         remaining_ttl = (self._expiry[cache_key] - datetime.now()).total_seconds()
         logger.info(f"Cache hit for {repo_url} - {remaining_ttl/3600:.1f} hours remaining")
-        print("RESULT: ",self._cache[cache_key])
-
         return self._cache[cache_key]
     
 
