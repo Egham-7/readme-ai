@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
-from typing import Optional, Dict, Any
+from typing import Optional
 from readme_ai.repo_analyzer import RepoAnalyzerAgent
 from readme_ai.readme_agent import ReadmeCompilerAgent
 from readme_ai.settings import get_settings
@@ -134,4 +134,3 @@ async def generate_readme(request: RepoRequest):
 if __name__ == "__main__":
     config = Config()
     asyncio.run(serve(app, config))
-

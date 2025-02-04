@@ -1,14 +1,14 @@
 from urllib.parse import urlparse
-from github.ContentFile import ContentFile
-from github import Github, UnknownObjectException
+from github.ContentFile import ContentFile  # type:ignore
+from github import Github, UnknownObjectException  # type: ignore
 from typing import List, Optional, Dict, Any, TypedDict, Annotated, cast
-from langgraph.graph import StateGraph, START, END
-from langchain_groq import ChatGroq
-from langchain.prompts import ChatPromptTemplate
-from pydantic import BaseModel, Field
+from langgraph.graph import StateGraph, START, END  # type: ignore
+from langchain_groq import ChatGroq  # type: ignore
+from langchain.prompts import ChatPromptTemplate  # type:ignore
+from pydantic import BaseModel, Field  # type:ignore
 import logging
 import asyncio
-from aiohttp import ClientSession
+from aiohttp import ClientSession  # type:ignore
 from functools import lru_cache
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class RepoAnalyzerAgent:
         )
         self.graph = self._build_analysis_graph()
         self.session = ClientSession()
-        self._file_content_cache = {}
+        self._file_content_cache: dict[str, str] = {}
         logger.info("RepoAnalyzerAgent initialized successfully")
 
     async def __aenter__(self):
@@ -392,4 +392,3 @@ class RepoAnalyzerAgent:
             )
         finally:
             github_client.close()
-

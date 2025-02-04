@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Any, TypedDict, Optional, List
+from typing import Dict, Any, TypedDict
 from langgraph.graph import StateGraph, START, END  # type:ignore
 from langchain_groq import ChatGroq  # type:ignore
 from langchain.prompts import ChatPromptTemplate  # type:ignore
@@ -52,7 +52,7 @@ class ReadmeCompilerAgent:
 
     async def plan(self, state: RepoAnalyzerState) -> RepoAnalyzerState:
         print("\n=== PLANNING README ===")
-        logger.info(f"Processing repository analysis for planning")
+        logger.info("Processing repository analysis for planning")
 
         def _format_analysis_for_prompt(analysis_list: list[dict[str, str]]) -> str:
             analysis_formatted = []
@@ -177,7 +177,7 @@ class ReadmeCompilerAgent:
             "plan": "",
             "readme": "",
             "template": "",
-            "analysis": repo_analysis,
+            "analysis": [repo_analysis],
         }
 
         try:
@@ -199,4 +199,3 @@ class ReadmeCompilerAgent:
         """Clear internal caches"""
         self._cache.clear()
         self._build_gen_readme_graph.cache_clear()
-
