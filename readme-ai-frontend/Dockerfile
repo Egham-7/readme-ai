@@ -8,6 +8,9 @@ RUN bun install --frozen-lockfile
 
 COPY . .
 
+ARG VITE_BASE_API_URL
+ENV VITE_BASE_API_URL=$VITE_BASE_API_URL
+
 RUN bun run build
 
 FROM caddy:latest
@@ -15,6 +18,7 @@ FROM caddy:latest
 WORKDIR /app
 
 COPY Caddyfile ./
+
 RUN caddy fmt Caddyfile --overwrite
 
 COPY --from=build /app/dist ./dist
