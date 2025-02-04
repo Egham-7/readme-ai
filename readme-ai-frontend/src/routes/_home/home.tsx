@@ -17,7 +17,6 @@ import MarkdownPreview from "@/components/markdown-preview";
 import { siGithub as Github } from "simple-icons";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import { useForm } from "react-hook-form";
 import {
   Form,
@@ -27,20 +26,52 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useGenerateReadme } from "@/hooks/readme/use-generate-readme";
-
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import type { ApiErrorResponse } from "@/services/readme";
 
+// Define strict types for step numbers
+type Step = 1 | 2 | 3;
+
+// Improved type definitions
 interface StepHeaderProps {
-  currentStep: number;
+  currentStep: Step;
   className?: string;
 }
+
+interface GithubLinkFormProps {
+  form: ReturnType<typeof useForm<FormSchema>>;
+  onSubmit: (values: FormSchema) => void;
+  onBack: () => void;
+  isLoading: boolean;
+}
+
+interface MarkdownResultProps {
+  markdown?: string;
+  onStartOver: () => void;
+  isCopied: boolean;
+  onCopy: () => Promise<void>;
+  handleSubmit: () => void;
+  isLoading: boolean;
+}
+
+// Define form schema type
+type FormSchema = z.infer<typeof formSchema>;
+
+// Constants
+const STEPS = [
+  "Select Template",
+  "Enter Repository",
+  "Generated Result",
+] as const;
+const COPY_TIMEOUT = 2000;
+
 const formSchema = z.object({
   githubLink: z.string().url("Please enter a valid GitHub URL"),
   templateId: z.string().min(1, "Please select a template").optional(),
 });
 
+// Memoizable components
 const LoadingSkeleton = () => (
   <Card className="w-full max-w-4xl mx-auto">
     <CardHeader>
@@ -59,61 +90,52 @@ const LoadingSkeleton = () => (
   </Card>
 );
 
-function StepHeader({ currentStep, className }: StepHeaderProps) {
-  const steps = ["Select Template", "Enter Repository", "Generated Result"];
-
-  return (
-    <div className={cn("w-full max-w-4xl mx-auto mb-8", className)}>
-      <h1 className="text-3xl font-bold text-center mb-4 text-foreground">
-        Generate GitHub README
-      </h1>
-      <div className="flex justify-center items-center space-x-4">
-        {steps.map((step, index) => (
-          <div key={index} className="flex items-center">
-            <div
-              className={cn(
-                "flex items-center justify-center w-8 h-8 rounded-full border-2",
-                currentStep === index + 1
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-muted text-muted-foreground",
-              )}
-            >
-              {index + 1}
-            </div>
-            <span
-              className={cn(
-                "ml-2",
-                currentStep === index + 1
-                  ? "font-medium text-foreground"
-                  : "text-muted-foreground",
-              )}
-            >
-              {step}
-            </span>
-            {index < steps.length - 1 && (
-              <div className="w-8 h-px bg-border mx-2" />
+const StepHeader = ({ currentStep, className }: StepHeaderProps) => (
+  <div className={cn("w-full max-w-4xl mx-auto mb-8", className)}>
+    <h1 className="text-3xl font-bold text-center mb-4 text-foreground">
+      Generate GitHub README
+    </h1>
+    <div className="flex justify-center items-center space-x-4">
+      {STEPS.map((step, index) => (
+        <div key={index} className="flex items-center">
+          <div
+            className={cn(
+              "flex items-center justify-center w-8 h-8 rounded-full border-2",
+              currentStep === index + 1
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-muted text-muted-foreground",
             )}
+          >
+            {index + 1}
           </div>
-        ))}
-      </div>
+          <span
+            className={cn(
+              "ml-2",
+              currentStep === index + 1
+                ? "font-medium text-foreground"
+                : "text-muted-foreground",
+            )}
+          >
+            {step}
+          </span>
+          {index < STEPS.length - 1 && (
+            <div className="w-8 h-px bg-border mx-2" />
+          )}
+        </div>
+      ))}
     </div>
-  );
-}
+  </div>
+);
 
 const GithubLinkForm = ({
   form,
   onSubmit,
   onBack,
   isLoading,
-}: {
-  form: ReturnType<typeof useForm<z.infer<typeof formSchema>>>;
-  onSubmit: (values: z.infer<typeof formSchema>) => void;
-  onBack: () => void;
-  isLoading: boolean;
-}) =>
-  isLoading ? (
-    <LoadingSkeleton />
-  ) : (
+}: GithubLinkFormProps) => {
+  if (isLoading) return <LoadingSkeleton />;
+
+  return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle>Enter GitHub Repository Link</CardTitle>
@@ -165,19 +187,21 @@ const GithubLinkForm = ({
       </CardContent>
     </Card>
   );
+};
 
 const MarkdownResult = ({
   markdown,
   onStartOver,
   isCopied,
   onCopy,
-}: {
-  markdown?: string;
-  onStartOver: () => void;
-  isCopied: boolean;
-  onCopy: () => Promise<void>;
-}) => {
-  if (!markdown || (markdown && markdown.length <= 0)) {
+  handleSubmit,
+  isLoading,
+}: MarkdownResultProps) => {
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
+
+  if (!markdown || markdown.length <= 0) {
     return (
       <Card className="w-full max-w-4xl mx-auto">
         <CardHeader>
@@ -249,25 +273,34 @@ const MarkdownResult = ({
           <Button onClick={onStartOver} variant="outline">
             Start Over
           </Button>
+          <Button
+            onClick={(e) => {
+              e.preventDefault();
+              handleSubmit();
+            }}
+            variant="secondary"
+          >
+            Retry Generation
+          </Button>
         </div>
       </CardContent>
     </Card>
   );
 };
 
-// Main component
 export function GitHubMarkdownGenerator() {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState<Step>(1);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const { toast } = useToast();
+
   const {
     mutate: generateReadme,
     isPending,
     data: markdownData,
   } = useGenerateReadme();
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       githubLink: "",
@@ -275,7 +308,7 @@ export function GitHubMarkdownGenerator() {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = (values: FormSchema) => {
     generateReadme(
       { repo_url: values.githubLink },
       {
@@ -298,13 +331,12 @@ export function GitHubMarkdownGenerator() {
     setIsCopied(true);
     setTimeout(() => {
       setIsCopied(false);
-    }, 2000);
+    }, COPY_TIMEOUT);
   };
 
   return (
     <div className="p-8 space-y-8">
       <StepHeader currentStep={step} />
-
       {step === 1 && (
         <TemplateSelection
           onSelect={(id) => {
@@ -327,10 +359,13 @@ export function GitHubMarkdownGenerator() {
         <MarkdownResult
           markdown={markdownData}
           onStartOver={() => {
+            form.reset();
             setStep(1);
           }}
           isCopied={isCopied}
           onCopy={handleCopy}
+          handleSubmit={form.handleSubmit(onSubmit)}
+          isLoading={isPending}
         />
       )}
     </div>

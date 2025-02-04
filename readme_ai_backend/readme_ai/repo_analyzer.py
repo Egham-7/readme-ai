@@ -15,7 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class ImportantFiles(BaseModel):
-    files: List[str] = Field(description="List of important repository file paths")
+    files: List[str] = Field(
+        description="List of important repository file paths")
 
 
 class FileAnalysis(BaseModel):
@@ -45,7 +46,7 @@ class RepoAnalyzerAgent:
         logger.info("Initializing RepoAnalyzerAgent")
         self.github_token = github_token
         self.llm = ChatGroq(
-            model="mixtral-8x7b-32768",
+            model="llama-3.3-70b-versatile",
             temperature=0.1,
         )
         self.graph = self._build_analysis_graph()
@@ -104,7 +105,7 @@ class RepoAnalyzerAgent:
                 ),
             )
 
-            files = result.files[:5] if result.files else []
+            files = result.files
             logger.info(f"Selected Important Files: {files}")
             return {**state, "important_files": files}
         except Exception as e:
@@ -150,7 +151,8 @@ class RepoAnalyzerAgent:
             ".bin",
             ".dat",
         }
-        extension = "." + file_path.split(".")[-1].lower() if "." in file_path else ""
+        extension = "." + \
+            file_path.split(".")[-1].lower() if "." in file_path else ""
         return extension in binary_extensions
 
     async def _analyze_files_concurrently(
