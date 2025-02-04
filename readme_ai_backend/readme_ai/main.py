@@ -89,6 +89,8 @@ async def root():
 @app.post("/generate-readme")
 async def generate_readme(request: RepoRequest):
     """Generate README asynchronously"""
+    from datetime import datetime, timezone
+
     try:
         # Generate a timestamp string
         timestamp = datetime.now(timezone.utc).isoformat()
@@ -103,7 +105,7 @@ async def generate_readme(request: RepoRequest):
                         "analyzer": repo_analyzer is not None,
                         "compiler": readme_compiler is not None,
                     },
-                    timestamp=timestamp,
+                    timestamp=datetime.now(timezone.utc).isoformat(),
                 ).dict(),
             )
 
@@ -121,7 +123,7 @@ async def generate_readme(request: RepoRequest):
                         "error_message": repo_analysis.get("message", "Unknown error"),
                         "branch": request.branch,
                     },
-                    timestamp=timestamp,
+                    timestamp=datetime.now(timezone.utc).isoformat(),
                 ).dict(),
             )
 
@@ -145,7 +147,7 @@ async def generate_readme(request: RepoRequest):
                 message="Invalid input parameters",
                 error_code="VALIDATION_ERROR",
                 details={"validation_error": str(ve)},
-                timestamp=timestamp,
+                timestamp=datetime.now(timezone.utc).isoformat(),
             ).dict(),
         )
 
@@ -157,7 +159,7 @@ async def generate_readme(request: RepoRequest):
                 message="Internal server error during README generation",
                 error_code="INTERNAL_SERVER_ERROR",
                 details={"error_type": type(e).__name__, "error_message": str(e)},
-                timestamp=timestamp,
+                timestamp=datetime.now(timezone.utc).isoformat(),
             ).dict(),
         )
 
