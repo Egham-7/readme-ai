@@ -4,7 +4,7 @@ from github import Github, UnknownObjectException
 from typing import List
 import logging
 from typing import Dict, Any, TypedDict, Annotated, cast
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import StateGraph, START, END, CompiledGraph  # type:ignore
 from langchain_groq import ChatGroq
 from langchain.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
@@ -43,7 +43,7 @@ class RepoAnalyzerAgent:
         self.graph = self._build_analysis_graph()
         logger.info("RepoAnalyzerAgent initialized successfully")
 
-    def _build_analysis_graph(self) -> StateGraph:
+    def _build_analysis_graph(self) -> CompiledGraph:
         logger.info("Building analysis graph")
         graph = StateGraph(RepoAnalyzerState)
 
@@ -160,39 +160,40 @@ class RepoAnalyzerAgent:
         logger.info(f"Analyzing file: {file_path}")
 
         # Skip data files that don't need analysis
-        data_extensions = {'.csv', '.json', '.xml', '.yaml', '.yml', '.dat'}
+        data_extensions = {".csv", ".json", ".xml", ".yaml", ".yml", ".dat"}
         extension = "." + file_path.split(".")[-1].lower() if "." in file_path else ""
-        
+
         if extension in data_extensions:
             return {
                 "path": file_path,
-                "analysis": f"Data file {file_path} containing structured data for the application"
+                "analysis": f"Data file {file_path} containing structured data for the application",
             }
 
-        analysis_prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                """Extract key README documentation elements:
+        analysis_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """Extract key README documentation elements:
                 1. Setup & Installation
                 2. Core Features & Usage
                 3. Configuration
-                4. Quick Start Examples"""
-            ),
-            (
-                "human",
-                """File: {file_path}
+                4. Quick Start Examples""",
+                ),
+                (
+                    "human",
+                    """File: {file_path}
                 Content: {file_content}
                 
-                Extract the essential documentation points."""
-            )
-        ])
+                Extract the essential documentation points.""",
+                ),
+            ]
+        )
 
         result = structured_llm.invoke(
             analysis_prompt.format(file_path=file_path, file_content=content)
         )
 
         return {"path": result.path, "analysis": result.analysis}
-
 
     def analyze_repo(self, repo_url: str) -> Dict[str, Any]:
         print("\n=== STARTING REPOSITORY ANALYSIS ===")

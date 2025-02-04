@@ -1,7 +1,6 @@
-
 import logging
 from typing import Dict, Any, TypedDict
-from langgraph.graph import StateGraph, START, END  # type:ignore
+from langgraph.graph import StateGraph, START, END, CompiledGraph  # type:ignore
 from langchain_groq import ChatGroq  # type: ignore
 from langchain.prompts import ChatPromptTemplate  # type: ignore
 from pydantic import BaseModel, Field  # type: ignore
@@ -35,7 +34,7 @@ class ReadmeCompilerAgent:
         self.graph = self._build_gen_readme_graph()
         logger.info("RepoAnalyzerAgent initialized successfully")
 
-    def _build_gen_readme_graph(self) -> StateGraph:
+    def _build_gen_readme_graph(self) -> CompiledGraph:
         logger.info("Building analysis graph")
         graph = StateGraph(RepoAnalyzerState)
 
@@ -163,14 +162,11 @@ class ReadmeCompilerAgent:
                         "plan": step.get("plan", current_state["plan"]),
                         "readme": step.get("readme", current_state["readme"]),
                         "template": step.get("template", current_state["template"]),
-                        "analysis": step.get("analysis", current_state["analysis"])
+                        "analysis": step.get("analysis", current_state["analysis"]),
                     }
                     current_state = typed_update
                 elif hasattr(step, "content"):
-                    current_state = {
-                        **current_state,
-                        "readme": step.content
-                    }
+                    current_state = {**current_state, "readme": step.content}
 
                 results.append(current_state.copy())
 
@@ -190,4 +186,3 @@ class ReadmeCompilerAgent:
                 "analysis": repo_analysis,
                 "steps": results,
             }
-
