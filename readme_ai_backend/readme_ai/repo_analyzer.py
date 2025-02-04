@@ -4,7 +4,7 @@ from github import Github, UnknownObjectException
 from typing import List
 import logging
 from typing import Dict, Any, TypedDict, Annotated, cast
-from langgraph.graph import StateGraph, START, END, CompiledGraph  # type:ignore
+from langgraph.graph import StateGraph, START, END  # type:ignore
 from langchain_groq import ChatGroq
 from langchain.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
@@ -43,7 +43,7 @@ class RepoAnalyzerAgent:
         self.graph = self._build_analysis_graph()
         logger.info("RepoAnalyzerAgent initialized successfully")
 
-    def _build_analysis_graph(self) -> CompiledGraph:
+    def _build_analysis_graph(self) -> StateGraph:
         logger.info("Building analysis graph")
         graph = StateGraph(RepoAnalyzerState)
 

@@ -1,6 +1,6 @@
 import logging
 from typing import Dict, Any, TypedDict
-from langgraph.graph import StateGraph, START, END, CompiledGraph  # type:ignore
+from langgraph.graph import StateGraph, START, END  # type:ignore
 from langchain_groq import ChatGroq  # type: ignore
 from langchain.prompts import ChatPromptTemplate  # type: ignore
 from pydantic import BaseModel, Field  # type: ignore
@@ -34,7 +34,7 @@ class ReadmeCompilerAgent:
         self.graph = self._build_gen_readme_graph()
         logger.info("RepoAnalyzerAgent initialized successfully")
 
-    def _build_gen_readme_graph(self) -> CompiledGraph:
+    def _build_gen_readme_graph(self) -> StateGraph:
         logger.info("Building analysis graph")
         graph = StateGraph(RepoAnalyzerState)
 
