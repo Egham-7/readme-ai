@@ -1,8 +1,8 @@
 # type: ignore
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
-from typing import Optional
+from typing import Optional, Dict, Any
 from readme_ai.repo_analyzer import RepoAnalyzerAgent
 from readme_ai.readme_agent import ReadmeCompilerAgent
 from readme_ai.settings import get_settings
@@ -11,16 +11,43 @@ import logging
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
 import asyncio
+from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
 
 # Load environment variables and configure logging
 load_dotenv()
 settings = get_settings()
-logging.basicConfig(level=logging.DEBUG)
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
-# Initialize FastAPI app
+# Initialize agents at startup
+repo_analyzer: Optional[RepoAnalyzerAgent] = None
+readme_compiler: Optional[ReadmeCompilerAgent] = None
+
+
+@asynccontextmanager
+async def lifespan(_):
+    # Initialize agents on startup
+    global repo_analyzer, readme_compiler
+    repo_analyzer = RepoAnalyzerAgent(github_token=settings.GITHUB_TOKEN)
+    readme_compiler = ReadmeCompilerAgent()
+    logger.info("Initialized AI agents")
+    yield
+    # Cleanup on shutdown
+    if hasattr(repo_analyzer, "session"):
+        await repo_analyzer.session.close()
+    logger.info("Cleaned up resources")
+
+
+# Initialize FastAPI app with lifespan
 app = FastAPI(
-    title=settings.APP_NAME, version=settings.APP_VERSION, debug=settings.DEBUG
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    debug=settings.DEBUG,
+    lifespan=lifespan,
 )
 
 # Configure CORS
@@ -32,15 +59,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize both agents
-repo_analyzer = RepoAnalyzerAgent(
-    github_token=settings.GITHUB_TOKEN, groq_api_key=settings.GROQ_API_KEY
-)
-
-readme_compiler = ReadmeCompilerAgent(
-    groq_api_key=settings.GROQ_API_KEY,
-)
-
 
 class RepoRequest(BaseModel):
     repo_url: HttpUrl
@@ -50,40 +68,70 @@ class RepoRequest(BaseModel):
 @app.get("/")
 async def root():
     """Health check endpoint"""
-    return {"status": "online", "version": settings.APP_VERSION}
+    return {
+        "status": "online",
+        "version": settings.APP_VERSION,
+        "services": {
+            "analyzer": repo_analyzer is not None,
+            "compiler": readme_compiler is not None,
+        },
+    }
 
 
-# Update the generate_readme endpoint to use the correct method name
 @app.post("/generate-readme")
 async def generate_readme(request: RepoRequest):
     """Generate README asynchronously"""
     try:
-        # Get repository analysis
-        repo_analysis = repo_analyzer.analyze_repo(repo_url=str(request.repo_url))
+        if not repo_analyzer or not readme_compiler:
+            raise RuntimeError("Services not properly initialized")
 
-        # Convert analysis results to proper format
-        formatted_analysis = {
-            "files": str(repo_analysis),
-            "repo_url": str(request.repo_url),
-        }
+        # Get repository analysis
+        repo_analysis = await repo_analyzer.analyze_repo(repo_url=str(request.repo_url))
+
+        # Handle analysis errors
+        if repo_analysis.get("status") == "error":
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "message": "Repository analysis failed",
+                    "details": repo_analysis.get("message", "Unknown error"),
+                },
+            )
 
         # Generate README with formatted analysis
-        readme_content = readme_compiler.gen_readme(
-            repo_url=request.repo_url, repo_analysis=formatted_analysis["files"]
+        readme_content = await readme_compiler.gen_readme(
+            repo_url=request.repo_url, repo_analysis=repo_analysis["analysis"]
         )
 
-        return {
-            "status": "completed",
-            "content": readme_content["readme"],
-            "repo_url": str(request.repo_url),
-            "analysis": formatted_analysis,
-        }
+        logger.info("README generation completed successfully")
+
+        return readme_content["readme"]
+
+    except ValueError as ve:
+        logger.error(f"Validation error: {str(ve)}")
+        return JSONResponse(
+            status_code=400,
+            content={
+                "status": "error",
+                "message": "Invalid input parameters",
+                "details": str(ve),
+            },
+        )
     except Exception as e:
-        logger.error(f"Error in README generation: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to generate README: {str(e)}"
+        logger.error(f"README generation error: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": "Internal server error during README generation",
+                "error_code": type(e).__name__,
+                "details": str(e),
+            },
         )
 
 
 if __name__ == "__main__":
-    asyncio.run(serve(app, Config()))
+    config = Config()
+    asyncio.run(serve(app, config))
+
