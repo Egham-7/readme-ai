@@ -51,6 +51,8 @@ async def root():
     logger.info("Health check endpoint accessed")
     return {"status": "online", "version": settings.APP_VERSION}
 
+
+
 @app.post("/generate-readme")
 async def generate_readme(request: RepoRequest):
     """Generate README asynchronously with caching"""
@@ -59,11 +61,15 @@ async def generate_readme(request: RepoRequest):
 
     try:
         # Check cache first
-        cached_result = cache_service.get(str(request.repo_url))
-        if cached_result:
+        cached_content = cache_service.get(str(request.repo_url))
+        if cached_content:
             elapsed_time = time.time() - start_time
             logger.info(f"Cache hit - Retrieved result in {elapsed_time:.2f} seconds")
-            return cached_result
+            return {
+                "status": "completed",
+                "content": cached_content,
+                "repo_url": str(request.repo_url)
+            }
 
         # Cache miss - proceed with generation
         logger.info(f"Cache miss for {request.repo_url} - Generating new README")
@@ -72,7 +78,7 @@ async def generate_readme(request: RepoRequest):
         repo_analyzer = RepoAnalyzerAgent(
             github_token=settings.GITHUB_TOKEN,
         )
-        repo_analysis = repo_analyzer.analyze_repo(repo_url=str(request.repo_url))
+        repo_analysis = await   repo_analyzer.analyze_repo(repo_url=str(request.repo_url))
     
         formatted_analysis = {
             "files": str(repo_analysis),
@@ -80,30 +86,25 @@ async def generate_readme(request: RepoRequest):
         }
 
         # Generate README
-        readme_compiler = ReadmeCompilerAgent(
-            groq_api_key=settings.GROQ_API_KEY,
-        )
-        readme_content = readme_compiler.gen_readme(
+        readme_compiler = ReadmeCompilerAgent()
+        readme_content = await readme_compiler.gen_readme(
             repo_url=request.repo_url,
             repo_analysis=formatted_analysis["files"]
         )
 
-        response = {
-            "status": "completed",
-            "content": readme_content["readme"],
-            "repo_url": str(request.repo_url),
-            "analysis": formatted_analysis,
-        }
-        print("RESULT: ",readme_content["readme"])
-        # Store in cache
-        # In generate_readme()
         content = readme_content["readme"]
+        
+        # Store in cache
         cache_service.set(repo_url=str(request.repo_url), content=content)
 
         elapsed_time = time.time() - start_time
         logger.info(f"Generated and cached README in {elapsed_time:.2f} seconds")
         
-        return response
+        return {
+            "status": "completed",
+            "content": content,
+            "repo_url": str(request.repo_url)
+        }
 
     except Exception as e:
         elapsed_time = time.time() - start_time
@@ -111,13 +112,8 @@ async def generate_readme(request: RepoRequest):
         raise HTTPException(
             status_code=500, detail=f"Failed to generate README: {str(e)}"
         )
+    
 
-@app.post("/clear-cache")
-async def clear_cache(request: RepoRequest):
-    """Clear cache for a specific repository"""
-    cache_key = cache_service._generate_cache_key(str(request.repo_url))
-    cache_service.delete(cache_key)
-    return {"status": "success", "message": "Cache cleared"}
 
 if __name__ == "__main__":
     logger.info("Starting README Generation Service...")
