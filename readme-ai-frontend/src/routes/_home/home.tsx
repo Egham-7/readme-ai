@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, AlertCircle, RefreshCw } from "lucide-react";
 import { TemplateSelection } from "@/components/home/template-selection";
 import MarkdownPreview from "@/components/markdown-preview";
 import { siGithub as Github } from "simple-icons";
@@ -28,12 +28,11 @@ import {
 import { useGenerateReadme } from "@/hooks/readme/use-generate-readme";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import type { ApiErrorResponse } from "@/services/readme";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import type { ApiError } from "@/services/readme";
 
-// Define strict types for step numbers
 type Step = 1 | 2 | 3;
 
-// Improved type definitions
 interface StepHeaderProps {
   currentStep: Step;
   className?: string;
@@ -48,6 +47,7 @@ interface GithubLinkFormProps {
 
 interface MarkdownResultProps {
   markdown?: string;
+  error?: ApiError;
   onStartOver: () => void;
   isCopied: boolean;
   onCopy: () => Promise<void>;
@@ -55,23 +55,47 @@ interface MarkdownResultProps {
   isLoading: boolean;
 }
 
-// Define form schema type
-type FormSchema = z.infer<typeof formSchema>;
-
-// Constants
 const STEPS = [
   "Select Template",
   "Enter Repository",
   "Generated Result",
 ] as const;
+
 const COPY_TIMEOUT = 2000;
 
 const formSchema = z.object({
-  githubLink: z.string().url("Please enter a valid GitHub URL"),
+  githubLink: z.string().url("Please enter a valid GitHub repository URL"),
   templateId: z.string().min(1, "Please select a template").optional(),
 });
 
-// Memoizable components
+type FormSchema = z.infer<typeof formSchema>;
+
+const getErrorMessage = (error: ApiError): string => {
+  switch (error.errorCode) {
+    case "VALIDATION_ERROR":
+      return "The GitHub repository URL provided is not valid. Please check the URL and try again.";
+    case "ANALYSIS_FAILED":
+      return "We couldn't analyze this repository. Please verify the repository is public and contains code.";
+    case "SERVICE_UNAVAILABLE":
+      return "Our service is temporarily unavailable. Please try again in a few moments.";
+    default:
+      return "Something went wrong while generating your README. Please try again.";
+  }
+};
+
+const getErrorAction = (error: ApiError): string => {
+  switch (error.errorCode) {
+    case "VALIDATION_ERROR":
+      return "Check Repository URL";
+    case "ANALYSIS_FAILED":
+      return "Verify Repository Access";
+    case "SERVICE_UNAVAILABLE":
+      return "Try Again Later";
+    default:
+      return "Try Again";
+  }
+};
+
 const LoadingSkeleton = () => (
   <Card className="w-full max-w-4xl mx-auto">
     <CardHeader>
@@ -88,6 +112,26 @@ const LoadingSkeleton = () => (
       </div>
     </CardContent>
   </Card>
+);
+
+const ErrorDisplay = ({ error }: { error: ApiError }) => (
+  <Alert variant="destructive" className="mb-4">
+    <AlertCircle className="h-5 w-5" />
+    <AlertTitle className="text-lg font-semibold">Generation Failed</AlertTitle>
+    <AlertDescription className="mt-2">
+      <div className="space-y-2">
+        <p className="text-base">{getErrorMessage(error)}</p>
+        {error.details && (
+          <div className="text-sm bg-destructive/10 p-2 rounded-md mt-2">
+            <strong>Additional Info:</strong>
+            <p className="mt-1 opacity-90">
+              {JSON.stringify(error.details, null, 2)}
+            </p>
+          </div>
+        )}
+      </div>
+    </AlertDescription>
+  </Alert>
 );
 
 const StepHeader = ({ currentStep, className }: StepHeaderProps) => (
@@ -179,7 +223,7 @@ const GithubLinkForm = ({
                 Back
               </Button>
               <Button type="submit" disabled={isLoading}>
-                Generate Markdown
+                Generate README
               </Button>
             </div>
           </form>
@@ -191,6 +235,7 @@ const GithubLinkForm = ({
 
 const MarkdownResult = ({
   markdown,
+  error,
   onStartOver,
   isCopied,
   onCopy,
@@ -201,13 +246,43 @@ const MarkdownResult = ({
     return <LoadingSkeleton />;
   }
 
+  if (error) {
+    return (
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardHeader>
+          <CardTitle>README Generation Failed</CardTitle>
+          <CardDescription>
+            We encountered an issue while generating your README
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <ErrorDisplay error={error} />
+          <div className="flex justify-between">
+            <Button onClick={onStartOver} variant="outline">
+              Start Over
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              variant="default"
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              {getErrorAction(error)}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!markdown || markdown.length <= 0) {
     return (
       <Card className="w-full max-w-4xl mx-auto">
         <CardHeader>
           <CardTitle>No Content Generated</CardTitle>
           <CardDescription>
-            No markdown content was generated. Please try again.
+            The README generation process didn't produce any content. Let's try
+            again.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -222,9 +297,10 @@ const MarkdownResult = ({
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle>Generated Markdown</CardTitle>
+        <CardTitle>README Generated Successfully</CardTitle>
         <CardDescription>
-          Your README markdown has been generated
+          Your README is ready! Preview it below or copy the markdown to use it
+          in your repository.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -240,21 +316,21 @@ const MarkdownResult = ({
           >
             {isCopied ? (
               <>
-                <Check className="w-4 h-4" />
-                <span>Copied!</span>
+                <Check className="h-4 w-4" />
+                <span>Copied to Clipboard</span>
               </>
             ) : (
               <>
-                <Copy className="w-4 h-4" />
+                <Copy className="h-4 w-4" />
                 <span>Copy Markdown</span>
               </>
             )}
           </Button>
         </div>
-        <Tabs defaultValue="code">
+        <Tabs defaultValue="preview">
           <TabsList>
-            <TabsTrigger value="code">Markdown Code</TabsTrigger>
-            <TabsTrigger value="preview">Preview</TabsTrigger>
+            <TabsTrigger value="preview">Live Preview</TabsTrigger>
+            <TabsTrigger value="code">Markdown Source</TabsTrigger>
           </TabsList>
           <TabsContent value="code">
             <Textarea
@@ -264,23 +340,22 @@ const MarkdownResult = ({
             />
           </TabsContent>
           <TabsContent value="preview">
-            <div className="prose max-w-none border rounded-md p-4 h-96 overflow-y-auto">
+            <div className="prose max-w-none border rounded-md p-4 h-96 overflow-y-auto dark:prose-invert">
               <MarkdownPreview content={markdown} />
             </div>
           </TabsContent>
         </Tabs>
         <div className="flex justify-between">
           <Button onClick={onStartOver} variant="outline">
-            Start Over
+            Generate Another
           </Button>
           <Button
-            onClick={(e) => {
-              e.preventDefault();
-              handleSubmit();
-            }}
+            onClick={handleSubmit}
             variant="secondary"
+            className="flex items-center gap-2"
           >
-            Retry Generation
+            <RefreshCw className="h-4 w-4" />
+            Regenerate README
           </Button>
         </div>
       </CardContent>
@@ -292,6 +367,7 @@ export function GitHubMarkdownGenerator() {
   const [step, setStep] = useState<Step>(1);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
+  const [error, setError] = useState<ApiError | undefined>();
   const { toast } = useToast();
 
   const {
@@ -309,16 +385,23 @@ export function GitHubMarkdownGenerator() {
   });
 
   const onSubmit = (values: FormSchema) => {
+    setError(undefined);
     generateReadme(
       { repo_url: values.githubLink },
       {
         onSuccess: () => {
           setStep(3);
-        },
-        onError: (error: ApiErrorResponse) => {
           toast({
-            title: "Error generating markdown",
-            description: error.message.toString(),
+            title: "Success!",
+            description: "Your README has been generated successfully.",
+          });
+        },
+        onError: (error: ApiError) => {
+          setError(error);
+          setStep(3);
+          toast({
+            title: "Generation Failed",
+            description: getErrorMessage(error),
             variant: "destructive",
           });
         },
@@ -327,8 +410,13 @@ export function GitHubMarkdownGenerator() {
   };
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(markdownData || "");
+    if (!markdownData) return;
+    await navigator.clipboard.writeText(markdownData);
     setIsCopied(true);
+    toast({
+      title: "Copied!",
+      description: "README markdown copied to clipboard",
+    });
     setTimeout(() => {
       setIsCopied(false);
     }, COPY_TIMEOUT);
@@ -358,8 +446,10 @@ export function GitHubMarkdownGenerator() {
       {step === 3 && (
         <MarkdownResult
           markdown={markdownData}
+          error={error}
           onStartOver={() => {
             form.reset();
+            setError(undefined);
             setStep(1);
           }}
           isCopied={isCopied}

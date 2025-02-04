@@ -9,12 +9,36 @@ export interface RepoRequestParams {
 export interface HealthCheckResponse {
   status: string;
   version: string;
+  services: {
+    analyzer: boolean;
+    compiler: boolean;
+  };
 }
 
 export interface ApiErrorResponse {
   status: "error";
   message: string;
   error_code: string;
+  details?: Record<string, unknown>;
+  timestamp: string;
+}
+
+export interface ApiSuccessResponse {
+  status: "success";
+  data: string;
+  timestamp: string;
+}
+
+export class ApiError extends Error {
+  constructor(
+    public message: string,
+    public errorCode: string,
+    public details?: Record<string, unknown>,
+    public timestamp?: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
 }
 
 export const readmeService = {
@@ -27,20 +51,35 @@ export const readmeService = {
       body: JSON.stringify(params),
     });
 
+    const data = (await response.json()) as
+      | ApiErrorResponse
+      | ApiSuccessResponse;
+
     if (!response.ok) {
-      const errorData = (await response.json()) as ApiErrorResponse;
-      throw new Error(errorData.message || "Failed to generate README");
+      const errorData = data as ApiErrorResponse;
+      throw new ApiError(
+        errorData.message,
+        errorData.error_code,
+        errorData.details,
+        errorData.timestamp,
+      );
     }
 
-    const data = await response.text();
-    return data.replace(/^"|"$/g, "").replace(/\\n/g, "\n");
+    const successData = data as ApiSuccessResponse;
+    return successData.data;
   },
 
   checkHealth: async (): Promise<HealthCheckResponse> => {
     const response = await fetch(`${API_BASE_URL}/`);
 
     if (!response.ok) {
-      throw new Error("Health check failed");
+      const errorData = (await response.json()) as ApiErrorResponse;
+      throw new ApiError(
+        errorData.message,
+        errorData.error_code,
+        errorData.details,
+        errorData.timestamp,
+      );
     }
 
     return response.json() as Promise<HealthCheckResponse>;

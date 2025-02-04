@@ -1,8 +1,8 @@
 # type: ignore
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
-from typing import Optional
+from typing import Optional, Dict, Any
 from readme_ai.repo_analyzer import RepoAnalyzerAgent
 from readme_ai.readme_agent import ReadmeCompilerAgent
 from readme_ai.settings import get_settings
@@ -17,7 +17,6 @@ from contextlib import asynccontextmanager
 # Load environment variables and configure logging
 load_dotenv()
 settings = get_settings()
-
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
@@ -28,21 +27,31 @@ repo_analyzer: Optional[RepoAnalyzerAgent] = None
 readme_compiler: Optional[ReadmeCompilerAgent] = None
 
 
+class ErrorResponse(BaseModel):
+    status: str = "error"
+    message: str
+    error_code: str
+    details: Optional[Dict[str, Any]] = None
+    timestamp: str
+
+
 @asynccontextmanager
 async def lifespan(_):
-    # Initialize agents on startup
     global repo_analyzer, readme_compiler
-    repo_analyzer = RepoAnalyzerAgent(github_token=settings.GITHUB_TOKEN)
-    readme_compiler = ReadmeCompilerAgent()
-    logger.info("Initialized AI agents")
-    yield
-    # Cleanup on shutdown
-    if hasattr(repo_analyzer, "session"):
-        await repo_analyzer.session.close()
-    logger.info("Cleaned up resources")
+    try:
+        repo_analyzer = RepoAnalyzerAgent(github_token=settings.GITHUB_TOKEN)
+        readme_compiler = ReadmeCompilerAgent()
+        logger.info("Initialized AI agents")
+        yield
+    except Exception as e:
+        logger.error(f"Startup error: {str(e)}")
+        raise
+    finally:
+        if hasattr(repo_analyzer, "session"):
+            await repo_analyzer.session.close()
+        logger.info("Cleaned up resources")
 
 
-# Initialize FastAPI app with lifespan
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
@@ -50,7 +59,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -81,22 +89,39 @@ async def root():
 @app.post("/generate-readme")
 async def generate_readme(request: RepoRequest):
     """Generate README asynchronously"""
+    from datetime import datetime
+
     try:
         if not repo_analyzer or not readme_compiler:
-            raise RuntimeError("Services not properly initialized")
+            raise HTTPException(
+                status_code=503,
+                detail=ErrorResponse(
+                    message="Service unavailable",
+                    error_code="SERVICE_UNAVAILABLE",
+                    details={
+                        "analyzer": repo_analyzer is not None,
+                        "compiler": readme_compiler is not None,
+                    },
+                    timestamp=datetime.utcnow().isoformat(),
+                ).dict(),
+            )
 
         # Get repository analysis
         repo_analysis = await repo_analyzer.analyze_repo(repo_url=str(request.repo_url))
 
-        # Handle analysis errors
         if repo_analysis.get("status") == "error":
             return JSONResponse(
                 status_code=422,
-                content={
-                    "status": "error",
-                    "message": "Repository analysis failed",
-                    "details": repo_analysis.get("message", "Unknown error"),
-                },
+                content=ErrorResponse(
+                    message="Repository analysis failed",
+                    error_code="ANALYSIS_FAILED",
+                    details={
+                        "repo_url": str(request.repo_url),
+                        "error_message": repo_analysis.get("message", "Unknown error"),
+                        "branch": request.branch,
+                    },
+                    timestamp=datetime.utcnow().isoformat(),
+                ).dict(),
             )
 
         # Generate README with formatted analysis
@@ -105,32 +130,38 @@ async def generate_readme(request: RepoRequest):
         )
 
         logger.info("README generation completed successfully")
-
-        return readme_content["readme"]
+        return {
+            "status": "success",
+            "data": readme_content["readme"],
+            "timestamp": datetime.now(datetime.timezone.utc),
+        }
 
     except ValueError as ve:
         logger.error(f"Validation error: {str(ve)}")
         return JSONResponse(
             status_code=400,
-            content={
-                "status": "error",
-                "message": "Invalid input parameters",
-                "details": str(ve),
-            },
+            content=ErrorResponse(
+                message="Invalid input parameters",
+                error_code="VALIDATION_ERROR",
+                details={"validation_error": str(ve)},
+                timestamp=datetime.now(datetime.timezone.utc),
+            ).dict(),
         )
+
     except Exception as e:
         logger.error(f"README generation error: {str(e)}")
         return JSONResponse(
             status_code=500,
-            content={
-                "status": "error",
-                "message": "Internal server error during README generation",
-                "error_code": type(e).__name__,
-                "details": str(e),
-            },
+            content=ErrorResponse(
+                message="Internal server error during README generation",
+                error_code="INTERNAL_SERVER_ERROR",
+                details={"error_type": type(e).__name__, "error_message": str(e)},
+                timestamp=datetime.utcnow().isoformat(),
+            ).dict(),
         )
 
 
 if __name__ == "__main__":
     config = Config()
     asyncio.run(serve(app, config))
+
