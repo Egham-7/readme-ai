@@ -7,23 +7,18 @@ from readme_ai.readme_agent import ReadmeCompilerAgent
 from readme_ai.settings import get_settings
 from dotenv import load_dotenv
 import logging
-import time
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
 import asyncio
-from cache_service.cache import CacheService
-
-# Initialize cache service
-cache_service = CacheService()
+from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
 # Load environment variables and configure logging
 load_dotenv()
 settings = get_settings()
-
-# Enhanced logging configuration
 logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -37,7 +32,7 @@ class ErrorResponse(BaseModel):
     message: str
     error_code: str
     details: Optional[Dict[str, Any]] = None
-    timestamp: str
+    timestamp: str  # Make sure timestamp is a string
 
 
 @asynccontextmanager
@@ -72,80 +67,101 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class RepoRequest(BaseModel):
     repo_url: HttpUrl
     branch: Optional[str] = "main"
 
+
 @app.get("/")
 async def root():
     """Health check endpoint"""
-    logger.info("Health check endpoint accessed")
-    return {"status": "online", "version": settings.APP_VERSION}
-
+    return {
+        "status": "online",
+        "version": settings.APP_VERSION,
+        "services": {
+            "analyzer": repo_analyzer is not None,
+            "compiler": readme_compiler is not None,
+        },
+    }
 
 
 @app.post("/generate-readme")
 async def generate_readme(request: RepoRequest):
-    """Generate README asynchronously with caching"""
-    start_time = time.time()
-    logger.info(f"Starting README generation for repo: {request.repo_url}")
-
+    """Generate README asynchronously"""
     try:
-        # Check cache first
-        cached_content = cache_service.get(str(request.repo_url))
-        if cached_content:
-            elapsed_time = time.time() - start_time
-            logger.info(f"Cache hit - Retrieved result in {elapsed_time:.2f} seconds")
-            return {
-                "status": "completed",
-                "content": cached_content,
-                "repo_url": str(request.repo_url)
-            }
+        # Generate a timestamp string
+        timestamp = datetime.now(timezone.utc).isoformat()
 
-        # Cache miss - proceed with generation
-        logger.info(f"Cache miss for {request.repo_url} - Generating new README")
+        if not repo_analyzer or not readme_compiler:
+            raise HTTPException(
+                status_code=503,
+                detail=ErrorResponse(
+                    message="Service unavailable",
+                    error_code="SERVICE_UNAVAILABLE",
+                    details={
+                        "analyzer": repo_analyzer is not None,
+                        "compiler": readme_compiler is not None,
+                    },
+                    timestamp=timestamp,
+                ).dict(),
+            )
 
-        # Repository analysis
-        repo_analyzer = RepoAnalyzerAgent(
-            github_token=settings.GITHUB_TOKEN,
-        )
-        repo_analysis = await   repo_analyzer.analyze_repo(repo_url=str(request.repo_url))
-    
-        formatted_analysis = {
-            "files": str(repo_analysis),
-            "repo_url": str(request.repo_url),
-        }
+        # Get repository analysis
+        repo_analysis = await repo_analyzer.analyze_repo(repo_url=str(request.repo_url))
 
-        # Generate README
-        readme_compiler = ReadmeCompilerAgent()
+        if repo_analysis.get("status") == "error":
+            return JSONResponse(
+                status_code=422,
+                content=ErrorResponse(
+                    message="Repository analysis failed",
+                    error_code="ANALYSIS_FAILED",
+                    details={
+                        "repo_url": str(request.repo_url),
+                        "error_message": repo_analysis.get("message", "Unknown error"),
+                        "branch": request.branch,
+                    },
+                    timestamp=timestamp,
+                ).dict(),
+            )
+
+        # Generate README with formatted analysis
         readme_content = await readme_compiler.gen_readme(
-            repo_url=request.repo_url,
-            repo_analysis=formatted_analysis["files"]
+            repo_url=request.repo_url, repo_analysis=repo_analysis["analysis"]
         )
 
-        content = readme_content["readme"]
-        
-        # Store in cache
-        cache_service.set(repo_url=str(request.repo_url), content=content)
-
-        elapsed_time = time.time() - start_time
-        logger.info(f"Generated and cached README in {elapsed_time:.2f} seconds")
-        
+        logger.info("README generation completed successfully")
         return {
-            "status": "completed",
-            "content": content,
-            "repo_url": str(request.repo_url)
+            "status": "success",
+            "data": readme_content["readme"],
+            "timestamp": timestamp,
         }
+
+    except ValueError as ve:
+        logger.error(f"Validation error: {str(ve)}")
+        return JSONResponse(
+            status_code=400,
+            content=ErrorResponse(
+                message="Invalid input parameters",
+                error_code="VALIDATION_ERROR",
+                details={"validation_error": str(ve)},
+                timestamp=timestamp,
+            ).dict(),
+        )
 
     except Exception as e:
-        elapsed_time = time.time() - start_time
-        logger.error(f"Error generating README after {elapsed_time:.2f} seconds: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to generate README: {str(e)}"
+        logger.error(f"README generation error: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content=ErrorResponse(
+                message="Internal server error during README generation",
+                error_code="INTERNAL_SERVER_ERROR",
+                details={"error_type": type(e).__name__, "error_message": str(e)},
+                timestamp=timestamp,
+            ).dict(),
         )
-    
 
 
 if __name__ == "__main__":
-    logger.info("Starting README Generation Service...")
-    asyncio.run(serve(app, Config()))
+    config = Config()
+    asyncio.run(serve(app, config))

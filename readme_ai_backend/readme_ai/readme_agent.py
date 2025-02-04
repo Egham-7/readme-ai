@@ -26,7 +26,7 @@ class RepoAnalyzerState(TypedDict):
 class ReadmeCompilerAgent:
     def __init__(self):
         logger.info("Initializing ReadmeCompilerAgent")
-        self.llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
+        self.llm = ChatGroq(model="mixtral-8x7b-32768", temperature=0.1)
         self.graph = self._build_gen_readme_graph()
         self._cache = {}
         logger.info("ReadmeCompilerAgent initialized successfully")

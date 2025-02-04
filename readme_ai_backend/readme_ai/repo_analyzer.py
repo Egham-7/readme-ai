@@ -46,7 +46,7 @@ class RepoAnalyzerAgent:
         logger.info("Initializing RepoAnalyzerAgent")
         self.github_token = github_token
         self.llm = ChatGroq(
-            model="llama-3.3-70b-versatile",
+            model="mixtral-8x7b-32768",
             temperature=0.1,
         )
         self.graph = self._build_analysis_graph()
