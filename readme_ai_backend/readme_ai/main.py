@@ -71,7 +71,6 @@ async def generate_readme(request: RepoRequest):
         # Repository analysis
         repo_analyzer = RepoAnalyzerAgent(
             github_token=settings.GITHUB_TOKEN,
-            groq_api_key=settings.GROQ_API_KEY
         )
         repo_analysis = repo_analyzer.analyze_repo(repo_url=str(request.repo_url))
     
