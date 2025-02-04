@@ -164,4 +164,3 @@ async def generate_readme(request: RepoRequest):
 if __name__ == "__main__":
     config = Config()
     asyncio.run(serve(app, config))
-
