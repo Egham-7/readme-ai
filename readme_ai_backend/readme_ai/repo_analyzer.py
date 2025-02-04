@@ -154,7 +154,7 @@ class RepoAnalyzerAgent:
         return extension in binary_extensions
 
     async def _analyze_files_concurrently(
-        self, files_content: Dict[str, str], structured_llm
+        self, files_content: Dict[str, str]
     ) -> List[Dict[str, str]]:
         async def analyze_single_file(file_path: str, content: str) -> Dict[str, str]:
             try:
@@ -168,54 +168,45 @@ class RepoAnalyzerAgent:
                     [
                         (
                             "system",
-                            """You are an expert code analyst. Analyze this file focusing on these key aspects:
+                            """You are a technical documentation expert. Analyze this file and provide key information for README documentation:
 
-                        1. Primary Purpose
-                        - Main functionality and responsibilities
-                        - Core features implemented
-                        - Key algorithms or patterns used
+        1. Overview
+        - Main purpose and functionality
+        - Key features
 
-                        2. Technical Implementation
-                        - Dependencies and imports
-                        - Architecture patterns
-                        - Data structures used
-                        - Error handling approach
+        2. Technical Details
+        - Dependencies and requirements
+        - Important configurations
+        - Integration points
 
-                        3. Integration Points
-                        - External system connections
-                        - API endpoints or interfaces
-                        - Event handling or hooks
-                        - Database interactions
+        3. Usage
+        - Basic examples
+        - Common use cases
+        - Key API methods
 
-                        4. Configuration & Setup
-                        - Required environment variables
-                        - Configuration options
-                        - Installation prerequisites
-                        - Third-party requirements
-
-                        5. Usage Patterns
-                        - Common use cases
-                        - Code examples
-                        - API usage examples
-                        - Best practices
-
-                        Provide a clear, structured analysis highlighting the most important aspects.""",
+        Provide clear, concise information that helps developers understand and use this code.""",
                         ),
                         (
                             "human",
                             """Analyze this file:
-                        Path: {file_path}
-                        Content: {file_content}
-
-                        Focus on the most critical aspects that developers need to understand.""",
+        Path: {file_path}
+        Content: {file_content}
+        
+        Extract the most important details for documentation.""",
                         ),
                     ]
                 )
 
                 logger.info(f"File Content: {content}")
+                structured_llm = self.llm.with_structured_output(FileAnalysis)
 
-                result = await structured_llm.ainvoke(
-                    analysis_prompt.format(file_path=file_path, file_content=content)
+                result = cast(
+                    FileAnalysis,
+                    await structured_llm.ainvoke(
+                        analysis_prompt.format(
+                            file_path=file_path, file_content=content
+                        )
+                    ),
                 )
                 logger.info(f"Analysis Result: {result}")
                 return {"path": result.path, "analysis": result.analysis}
@@ -261,10 +252,7 @@ class RepoAnalyzerAgent:
             if not files_content:
                 raise AnalysisError("Failed to read any files")
 
-            structured_llm = self.llm.with_structured_output(FileAnalysis)
-            analyses = await self._analyze_files_concurrently(
-                files_content, structured_llm
-            )
+            analyses = await self._analyze_files_concurrently(files_content)
 
             return {**state, "analysis": analyses}
         except Exception as e:

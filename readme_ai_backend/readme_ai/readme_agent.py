@@ -168,7 +168,7 @@ class ReadmeCompilerAgent:
         }
 
     async def gen_readme(
-        self, repo_url: str, repo_analysis: dict[str, str]
+        self, repo_url: str, repo_analysis: list[dict[str, str]]
     ) -> Dict[str, Any]:
         logger.info("=== INITIATING README GENERATION ===")
         logger.info(f"Processing repository: {repo_url}")
@@ -177,7 +177,7 @@ class ReadmeCompilerAgent:
             "plan": "",
             "readme": "",
             "template": "",
-            "analysis": [repo_analysis],
+            "analysis": repo_analysis,
         }
 
         try:
