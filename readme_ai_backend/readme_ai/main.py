@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
-from typing import Optional
+from typing import Optional, Dict, Any
 from readme_ai.repo_analyzer import RepoAnalyzerAgent
 from readme_ai.readme_agent import ReadmeCompilerAgent
 from readme_ai.settings import get_settings
@@ -27,12 +27,43 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialize FastAPI app
+# Initialize agents at startup
+repo_analyzer: Optional[RepoAnalyzerAgent] = None
+readme_compiler: Optional[ReadmeCompilerAgent] = None
+
+
+class ErrorResponse(BaseModel):
+    status: str = "error"
+    message: str
+    error_code: str
+    details: Optional[Dict[str, Any]] = None
+    timestamp: str
+
+
+@asynccontextmanager
+async def lifespan(_):
+    global repo_analyzer, readme_compiler
+    try:
+        repo_analyzer = RepoAnalyzerAgent(github_token=settings.GITHUB_TOKEN)
+        readme_compiler = ReadmeCompilerAgent()
+        logger.info("Initialized AI agents")
+        yield
+    except Exception as e:
+        logger.error(f"Startup error: {str(e)}")
+        raise
+    finally:
+        if hasattr(repo_analyzer, "session"):
+            await repo_analyzer.session.close()
+        logger.info("Cleaned up resources")
+
+
 app = FastAPI(
-    title=settings.APP_NAME, version=settings.APP_VERSION, debug=settings.DEBUG
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    debug=settings.DEBUG,
+    lifespan=lifespan,
 )
 
-# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

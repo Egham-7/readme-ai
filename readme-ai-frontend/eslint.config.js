@@ -43,6 +43,7 @@ export default tseslint.config(
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/prefer-optional-chain": "error",
       "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-misused-promises": "warn",
       "prefer-const": "error",
       "no-var": "error",
       eqeqeq: ["error", "always"],
