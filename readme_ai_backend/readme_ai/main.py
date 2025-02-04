@@ -97,7 +97,9 @@ async def generate_readme(request: RepoRequest):
         }
         print("RESULT: ",readme_content["readme"])
         # Store in cache
-        cache_service.set(repo_url=request.repo_url, content=response)
+        # In generate_readme()
+        content = readme_content["readme"]
+        cache_service.set(repo_url=str(request.repo_url), content=content)
 
         elapsed_time = time.time() - start_time
         logger.info(f"Generated and cached README in {elapsed_time:.2f} seconds")
