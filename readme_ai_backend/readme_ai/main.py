@@ -41,15 +41,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize both agents
-repo_analyzer = RepoAnalyzerAgent(
-    github_token=settings.GITHUB_TOKEN, groq_api_key=settings.GROQ_API_KEY
-)
-
-readme_compiler = ReadmeCompilerAgent(
-    groq_api_key=settings.GROQ_API_KEY,
-)
-
 class RepoRequest(BaseModel):
     repo_url: HttpUrl
     branch: Optional[str] = "main"
@@ -68,56 +59,54 @@ async def generate_readme(request: RepoRequest):
 
     try:
         # Check cache first
-        logger.debug(f"Checking cache for repo: {request.repo_url}")
         cached_result = cache_service.get(str(request.repo_url))
-        
         if cached_result:
             elapsed_time = time.time() - start_time
-            logger.info(f"Cache HIT! Retrieved result for {request.repo_url} in {elapsed_time:.2f} seconds")
+            logger.info(f"Cache hit - Retrieved result in {elapsed_time:.2f} seconds")
             return cached_result
 
-        logger.info(f"Cache MISS for {request.repo_url}. Proceeding with analysis...")
+        # Cache miss - proceed with generation
+        logger.info(f"Cache miss for {request.repo_url} - Generating new README")
 
-        # Get repository analysis
-        logger.debug("Starting repository analysis...")
+        # Repository analysis
+        repo_analyzer = RepoAnalyzerAgent(
+            github_token=settings.GITHUB_TOKEN,
+            groq_api_key=settings.GROQ_API_KEY
+        )
         repo_analysis = repo_analyzer.analyze_repo(repo_url=str(request.repo_url))
-        logger.info("Repository analysis completed successfully")
 
-        # Convert analysis results to proper format
         formatted_analysis = {
             "files": str(repo_analysis),
             "repo_url": str(request.repo_url),
         }
-        logger.debug("Analysis results formatted")
 
-        # Generate README with formatted analysis
-        logger.debug("Starting README compilation...")
-        readme_content = readme_compiler.gen_readme(
-            repo_url=request.repo_url, repo_analysis=formatted_analysis["files"]
+        # Generate README
+        readme_compiler = ReadmeCompilerAgent(
+            groq_api_key=settings.GROQ_API_KEY,
         )
-        logger.info("README compilation completed successfully")
+        readme_content = readme_compiler.gen_readme(
+            repo_url=request.repo_url,
+            repo_analysis=formatted_analysis["files"]
+        )
 
-        # Prepare response
         response = {
             "status": "completed",
             "content": readme_content["readme"],
             "repo_url": str(request.repo_url),
             "analysis": formatted_analysis,
         }
-
-        # Cache the result
-        logger.debug(f"Caching results for {request.repo_url}")
-        cache_service.set(str(request.repo_url), response)
-        logger.info("Results cached successfully")
+         
+        # Store in cache
+        cache_service.set(repo_url=request.repo_url, content=response)
 
         elapsed_time = time.time() - start_time
-        logger.info(f"README generation completed in {elapsed_time:.2f} seconds")
+        logger.info(f"Generated and cached README in {elapsed_time:.2f} seconds")
         
         return response
 
     except Exception as e:
         elapsed_time = time.time() - start_time
-        logger.error(f"Error in README generation after {elapsed_time:.2f} seconds: {str(e)}")
+        logger.error(f"Error generating README after {elapsed_time:.2f} seconds: {str(e)}")
         raise HTTPException(
             status_code=500, detail=f"Failed to generate README: {str(e)}"
         )
@@ -125,10 +114,8 @@ async def generate_readme(request: RepoRequest):
 @app.post("/clear-cache")
 async def clear_cache(request: RepoRequest):
     """Clear cache for a specific repository"""
-    logger.info(f"Clearing cache for repo: {request.repo_url}")
     cache_key = cache_service._generate_cache_key(str(request.repo_url))
     cache_service.delete(cache_key)
-    logger.info(f"Cache cleared successfully for {request.repo_url}")
     return {"status": "success", "message": "Cache cleared"}
 
 if __name__ == "__main__":
