@@ -136,7 +136,7 @@ async def generate_readme(request: RepoRequest):
         return {
             "status": "success",
             "data": readme_content["readme"],
-            "timestamp": timestamp,
+            "timestamp": datetime.now(timezone.utc),
         }
 
     except ValueError as ve:
