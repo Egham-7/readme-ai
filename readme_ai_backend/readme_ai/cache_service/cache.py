@@ -1,4 +1,4 @@
-from typing import  Optional
+from typing import Optional
 from datetime import datetime, timedelta
 import logging
 

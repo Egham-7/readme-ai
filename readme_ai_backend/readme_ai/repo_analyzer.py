@@ -7,7 +7,7 @@ from langchain_groq import ChatGroq  # type: ignore
 from langchain.prompts import ChatPromptTemplate  # type:ignore
 from pydantic import BaseModel, Field  # type:ignore
 import logging
-import asyncio # type:ignore
+import asyncio  # type:ignore
 from aiohttp import ClientSession  # type:ignore
 from functools import lru_cache
 
