@@ -185,7 +185,7 @@ export function TemplateSelection({
   return (
     <div className="container mx-auto py-4 md:py-8 px-3 md:px-8 space-y-6 md:space-y-8">
       <Tabs defaultValue="featured" className="space-y-4 md:space-y-6">
-        <TabsList className="flex  mb-12 w-full flex-wrap md:flex-nowrap gap-2 md:gap-0 md:justify-start md:bg-muted/30 md:mb-0">
+        <TabsList className="flex mb-20 w-full flex-wrap md:flex-nowrap gap-2 md:gap-0 md:justify-start md:bg-muted/30 md:mb-0">
           <TabsTrigger
             value="featured"
             className="flex-1 md:flex-none text-sm md:text-base"
