@@ -39,17 +39,20 @@ const templates: Template[] = [
   {
     id: "default",
     name: "Default",
-    content: "# Project Title\n\n## Description\nA clear and concise description of your project.\n\n## Installation\n```bash\nnpm install\n```\n\n## Usage\nHow to use the project.\n\n## Contributing\nGuidelines for contributing.\n\n## License\nMIT",
+    content:
+      "# Project Title\n\n## Description\nA clear and concise description of your project.\n\n## Installation\n```bash\nnpm install\n```\n\n## Usage\nHow to use the project.\n\n## Contributing\nGuidelines for contributing.\n\n## License\nMIT",
   },
   {
     id: "minimal",
     name: "Minimal",
-    content: "# Project Title\nBrief description of your project.\n\n## Quick Start\n```bash\nnpm install\nnpm start\n```\n\n## License\nMIT",
+    content:
+      "# Project Title\nBrief description of your project.\n\n## Quick Start\n```bash\nnpm install\nnpm start\n```\n\n## License\nMIT",
   },
   {
     id: "detailed",
     name: "Detailed",
-    content: "# Project Title\n\n## Description\nDetailed project description.\n\n## Table of Contents\n- [Installation](#installation)\n- [Usage](#usage)\n- [API Reference](#api-reference)\n- [Contributing](#contributing)\n- [Tests](#tests)\n- [License](#license)\n\n## Installation\nStep-by-step installation guide.\n\n## Usage\nComprehensive usage examples.\n\n## API Reference\nAPI documentation.\n\n## Contributing\nDetailed contribution guidelines.\n\n## Tests\n```bash\nnpm test\n```\n\n## License\nMIT",
+    content:
+      "# Project Title\n\n## Description\nDetailed project description.\n\n## Table of Contents\n- [Installation](#installation)\n- [Usage](#usage)\n- [API Reference](#api-reference)\n- [Contributing](#contributing)\n- [Tests](#tests)\n- [License](#license)\n\n## Installation\nStep-by-step installation guide.\n\n## Usage\nComprehensive usage examples.\n\n## API Reference\nAPI documentation.\n\n## Contributing\nDetailed contribution guidelines.\n\n## Tests\n```bash\nnpm test\n```\n\n## License\nMIT",
   },
 ];
 
@@ -76,7 +79,12 @@ const TemplatePreviewContent = ({
         />
       </TabsContent>
     </Tabs>
-    <Button onClick={() => { onSelect(template.id); }} className="mt-4 w-full">
+    <Button
+      onClick={() => {
+        onSelect(template.id);
+      }}
+      className="mt-4 w-full"
+    >
       Use Template
     </Button>
   </>
@@ -124,7 +132,7 @@ const TemplateGrid = ({
                   Preview and use this template
                 </DrawerDescription>
               </DrawerHeader>
-              <div className="p-4">
+              <div className="p-4 flex-1 overflow-y-auto">
                 <TemplatePreviewContent
                   template={template}
                   onSelect={onSelect}
@@ -137,7 +145,7 @@ const TemplateGrid = ({
             <DialogTrigger asChild>
               <TemplatePreviewTrigger name={template.name} />
             </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden bg-background">
+            <DialogContent className="max-w-3xl  overflow-hidden bg-background">
               <DialogHeader className="bg-muted/30 p-4 rounded-t-lg">
                 <DialogTitle>{template.name} Template</DialogTitle>
                 <DialogDescription>
