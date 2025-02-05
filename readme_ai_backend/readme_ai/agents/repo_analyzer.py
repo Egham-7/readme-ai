@@ -4,12 +4,13 @@ from github import Github, UnknownObjectException  # type: ignore
 from typing import List, Optional, Dict, Any, TypedDict, Annotated, cast
 from langgraph.graph import StateGraph, START, END  # type: ignore
 from langchain_groq import ChatGroq  # type: ignore
-from langchain.prompts import ChatPromptTemplate  # type:ignore
+
 from pydantic import BaseModel, Field  # type:ignore
 import logging
-import asyncio
+import asyncio  # type:ignore
 from aiohttp import ClientSession  # type:ignore
 from functools import lru_cache
+from readme_ai.prompts import choose_file_prompt, binary_extensions, analyse_file_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ class RepoAnalyzerAgent:
         logger.info("Initializing RepoAnalyzerAgent")
         self.github_token = github_token
         self.llm = ChatGroq(
-            model="llama-3.3-70b-versatile",
+            model="mixtral-8x7b-32768",
             temperature=0.1,
         )
         self.graph = self._build_analysis_graph()
@@ -67,34 +68,14 @@ class RepoAnalyzerAgent:
         graph.add_edge(START, "choose_files")
         graph.add_edge("choose_files", "analyze_files")
         graph.add_edge("analyze_files", END)
-        return graph.compile()
+        return graph
 
     async def _choose_files(self, state: RepoAnalyzerState) -> RepoAnalyzerState:
         try:
             print("\n=== CHOOSING IMPORTANT FILES ===")
             print(f"Repository Tree:\n{state['repo_tree']}")
 
-            prompt = ChatPromptTemplate.from_messages(
-                [
-                    (
-                        "system",
-                        """You are a repository analysis expert. Select only the most critical files needed to understand this project. Focus on:
-                1. Main entry point or core implementation file
-                2. Primary configuration file
-                3. Key documentation if it exists
-                4. Build/deployment definition
-                
-                Return the exact file paths as shown ordered from most important to least.""",
-                    ),
-                    (
-                        "human",
-                        """Review this repository structure and identify just the vital files needed to grasp the project:
-                {repo_tree_md}
-                
-                Select only the files that are absolutely necessary - less is more.""",
-                    ),
-                ]
-            )
+            prompt = choose_file_prompt
 
             structured_llm = self.llm.with_structured_output(ImportantFiles)
             result = cast(
@@ -119,39 +100,9 @@ class RepoAnalyzerAgent:
 
     @lru_cache(maxsize=128)
     def _is_binary_file(self, file_path: str) -> bool:
-        binary_extensions = {
-            ".png",
-            ".jpg",
-            ".jpeg",
-            ".gif",
-            ".bmp",
-            ".ico",
-            ".svg",
-            ".pdf",
-            ".doc",
-            ".docx",
-            ".xls",
-            ".xlsx",
-            ".ppt",
-            ".pptx",
-            ".zip",
-            ".tar",
-            ".gz",
-            ".7z",
-            ".rar",
-            ".pyc",
-            ".exe",
-            ".dll",
-            ".so",
-            ".class",
-            ".db",
-            ".sqlite",
-            ".sqlite3",
-            ".bin",
-            ".dat",
-        }
+        binary_extensions1 = binary_extensions
         extension = "." + file_path.split(".")[-1].lower() if "." in file_path else ""
-        return extension in binary_extensions
+        return extension in binary_extensions1
 
     async def _analyze_files_concurrently(
         self, files_content: Dict[str, str]
@@ -164,38 +115,7 @@ class RepoAnalyzerAgent:
                         "analysis": "Binary file - analysis skipped",
                     }
 
-                analysis_prompt = ChatPromptTemplate.from_messages(
-                    [
-                        (
-                            "system",
-                            """You are a technical documentation expert. Analyze this file and provide key information for README documentation:
-
-        1. Overview
-        - Main purpose and functionality
-        - Key features
-
-        2. Technical Details
-        - Dependencies and requirements
-        - Important configurations
-        - Integration points
-
-        3. Usage
-        - Basic examples
-        - Common use cases
-        - Key API methods
-
-        Provide clear, concise information that helps developers understand and use this code.""",
-                        ),
-                        (
-                            "human",
-                            """Analyze this file:
-        Path: {file_path}
-        Content: {file_content}
-        
-        Extract the most important details for documentation.""",
-                        ),
-                    ]
-                )
+                analysis_prompt = analyse_file_prompt
 
                 logger.info(f"File Content: {content}")
                 structured_llm = self.llm.with_structured_output(FileAnalysis)
@@ -279,7 +199,9 @@ class RepoAnalyzerAgent:
             }
 
             print("\n=== STARTING ANALYSIS ===")
-            result = await self.graph.ainvoke(initial_state)
+            compiled_graph = self.graph.compile()
+            result = await compiled_graph.ainvoke(initial_state)
+
             print("\n=== ANALYSIS COMPLETED ===")
 
             logger.info(f"Final Analysis: {result.get('analysis', [])}")
