@@ -73,7 +73,13 @@ class ReadmeCompilerAgent:
 
         logger.info(f"Formatted Analysis: {formatted_analysis}")
 
-        result = await self.llm.ainvoke(prompt.format(repo_analysis=formatted_analysis, template = state["template"], repo_url= state["repo_url"]))
+        result = await self.llm.ainvoke(
+            prompt.format(
+                repo_analysis=formatted_analysis,
+                template=state["template"],
+                repo_url=state["repo_url"],
+            )
+        )
         logger.info("README planning completed")
 
         return {
@@ -84,11 +90,9 @@ class ReadmeCompilerAgent:
     async def _write_readme(self, state: RepoAnalyzerState) -> RepoAnalyzerState:
         print("\n=== WRITING README ===")
 
-        prompt = writing_readme_prompt
-
         chain = writing_readme_prompt | self.llm
 
-        result = await chain.ainvoke({"strategic_plan":state["plan"]})
+        result = await chain.ainvoke({"strategic_plan": state["plan"]})
         logger.info("README content generation completed")
 
         return {
@@ -97,7 +101,10 @@ class ReadmeCompilerAgent:
         }
 
     async def gen_readme(
-        self, repo_url: str, repo_analysis: list[dict[str, str]], temp:str = default_readme
+        self,
+        repo_url: str,
+        repo_analysis: list[dict[str, str]],
+        temp: str = default_readme,
     ) -> Dict[str, Any]:
         logger.info("=== INITIATING README GENERATION ===")
         logger.info(f"Processing repository: {repo_url}")
@@ -107,12 +114,12 @@ class ReadmeCompilerAgent:
             "readme": "",
             "template": temp,
             "analysis": repo_analysis,
-            "repo_url": repo_url
+            "repo_url": repo_url,
         }
-    
+
         try:
             compiled_graph = self.graph.compile()
-            final_state = await compiled_graph.ainvoke(initial_state)  
+            final_state = await compiled_graph.ainvoke(initial_state)
             return {
                 "repo_url": repo_url,
                 "readme": final_state["readme"],

@@ -41,7 +41,6 @@ cache_service = CacheService()
 
 
 @asynccontextmanager
-
 async def lifespan(_):
     global repo_analyzer, readme_compiler
     try:

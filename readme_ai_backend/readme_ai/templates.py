@@ -1,4 +1,4 @@
-default_readme = ("""
+default_readme = """
 Here's a cleaned-up and more reusable README template based on your original structure:
 
 ---
@@ -139,4 +139,3 @@ This project is licensed under the [LICENSE_NAME](LICENSE_LINK).
 This template is adaptable for any project—just replace the placeholders with relevant details! 🚀
 
                   """
-)

@@ -11,6 +11,7 @@ import asyncio  # type:ignore
 from aiohttp import ClientSession  # type:ignore
 from functools import lru_cache
 from readme_ai.prompts import choose_file_prompt, binary_extensions, analyse_file_prompt
+
 logger = logging.getLogger(__name__)
 
 
@@ -199,7 +200,7 @@ class RepoAnalyzerAgent:
 
             print("\n=== STARTING ANALYSIS ===")
             compiled_graph = self.graph.compile()
-            result = await compiled_graph.ainvoke(initial_state)  
+            result = await compiled_graph.ainvoke(initial_state)
 
             print("\n=== ANALYSIS COMPLETED ===")
 
