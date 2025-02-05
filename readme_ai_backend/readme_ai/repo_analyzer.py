@@ -7,7 +7,7 @@ from langchain_groq import ChatGroq  # type: ignore
 from langchain.prompts import ChatPromptTemplate  # type:ignore
 from pydantic import BaseModel, Field  # type:ignore
 import logging
-import asyncio
+import asyncio  # type:ignore
 from aiohttp import ClientSession  # type:ignore
 from functools import lru_cache
 
@@ -45,7 +45,7 @@ class RepoAnalyzerAgent:
         logger.info("Initializing RepoAnalyzerAgent")
         self.github_token = github_token
         self.llm = ChatGroq(
-            model="llama-3.3-70b-versatile",
+            model="mixtral-8x7b-32768",
             temperature=0.1,
         )
         self.graph = self._build_analysis_graph()
