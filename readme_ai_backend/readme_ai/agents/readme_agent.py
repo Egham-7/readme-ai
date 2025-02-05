@@ -2,9 +2,10 @@ import logging
 from typing import Dict, Any, TypedDict
 from langgraph.graph import StateGraph, START, END  # type:ignore
 from langchain_groq import ChatGroq  # type:ignore
-from langchain.prompts import ChatPromptTemplate  # type:ignore
 from pydantic import BaseModel, Field  # type:ignore
 from functools import lru_cache
+from readme_ai.prompts import plan_prompt, writing_readme_prompt
+from readme_ai.templates import default_readme
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +22,13 @@ class RepoAnalyzerState(TypedDict):
     readme: str
     template: str
     analysis: list[dict[str, str]]
+    repo_url: str
 
 
 class ReadmeCompilerAgent:
     def __init__(self):
         logger.info("Initializing ReadmeCompilerAgent")
-        self.llm = ChatGroq(model="mixtral-8x7b-32768", temperature=0.1)
+        self.llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
         self.graph = self._build_gen_readme_graph()
         self._cache = {}
         logger.info("ReadmeCompilerAgent initialized successfully")
@@ -46,7 +48,7 @@ class ReadmeCompilerAgent:
         graph.add_edge("write_readme", END)
 
         logger.info("README generation graph built successfully")
-        return graph.compile()
+        return graph
 
     async def plan(self, state: RepoAnalyzerState) -> RepoAnalyzerState:
         print("\n=== PLANNING README ===")
@@ -64,51 +66,20 @@ class ReadmeCompilerAgent:
 
             return "\n".join(analysis_formatted)
 
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    """You are a technical documentation strategist creating README plans. Focus on:
-
-                1. Content Strategy
-                - Core features and benefits
-                - Technical architecture overview
-                - Unique project aspects
-                
-                2. Structure Design
-                - Logical section organization
-                - Information hierarchy
-                - Content completeness
-                
-                3. Technical Details
-                - Code examples selection
-                - Configuration guidelines
-                - Integration patterns
-                
-                4. Documentation Scope
-                - API documentation
-                - Setup requirements
-                - Deployment guidelines
-                - Contributing guidelines""",
-                ),
-                (
-                    "human",
-                    """Create a detailed README plan based on this analysis:
-
-                Analysis Data:
-                {repo_analysis}
-
-                Provide a strategic documentation plan.""",
-                ),
-            ]
-        )
+        prompt = plan_prompt
 
         logger.info(f"Analysis: {state["analysis"]} ")
         formatted_analysis = _format_analysis_for_prompt(state["analysis"])
 
         logger.info(f"Formatted Analysis: {formatted_analysis}")
 
-        result = await self.llm.ainvoke(prompt.format(repo_analysis=formatted_analysis))
+        result = await self.llm.ainvoke(
+            prompt.format(
+                repo_analysis=formatted_analysis,
+                template=state["template"],
+                repo_url=state["repo_url"],
+            )
+        )
         logger.info("README planning completed")
 
         return {
@@ -119,45 +90,9 @@ class ReadmeCompilerAgent:
     async def _write_readme(self, state: RepoAnalyzerState) -> RepoAnalyzerState:
         print("\n=== WRITING README ===")
 
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    """As a markdown documentation expert, create a professional README.md with:
+        chain = writing_readme_prompt | self.llm
 
-                1. Core Components
-                - Project description and badges
-                - Quick start guide
-                - Detailed installation steps
-                - Usage examples with code
-                - API documentation
-                
-                2. Technical Documentation
-                - Code blocks with syntax highlighting
-                - Configuration examples
-                - CLI commands
-                - Environment setup
-                
-                3. Markdown Excellence
-                - Clear heading hierarchy (H1 > H6)
-                - Nested lists and tables
-                - Code fencing with language tags
-                - Links and references
-                - Badges and shields""",
-                ),
-                (
-                    "human",
-                    """Generate a comprehensive README.md following this plan:
-
-                Strategic Plan:
-                {strategic_plan}
-
-                Create production-grade documentation.""",
-                ),
-            ]
-        )
-
-        result = await self.llm.ainvoke(prompt.format(strategic_plan=state["plan"]))
+        result = await chain.ainvoke({"strategic_plan": state["plan"]})
         logger.info("README content generation completed")
 
         return {
@@ -166,7 +101,10 @@ class ReadmeCompilerAgent:
         }
 
     async def gen_readme(
-        self, repo_url: str, repo_analysis: list[dict[str, str]]
+        self,
+        repo_url: str,
+        repo_analysis: list[dict[str, str]],
+        temp: str = default_readme,
     ) -> Dict[str, Any]:
         logger.info("=== INITIATING README GENERATION ===")
         logger.info(f"Processing repository: {repo_url}")
@@ -174,13 +112,14 @@ class ReadmeCompilerAgent:
         initial_state: RepoAnalyzerState = {
             "plan": "",
             "readme": "",
-            "template": "",
+            "template": temp,
             "analysis": repo_analysis,
+            "repo_url": repo_url,
         }
 
         try:
-            final_state = await self.graph.ainvoke(initial_state)
-
+            compiled_graph = self.graph.compile()
+            final_state = await compiled_graph.ainvoke(initial_state)
             return {
                 "repo_url": repo_url,
                 "readme": final_state["readme"],

@@ -4,8 +4,8 @@ import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
-from readme_ai.repo_analyzer import RepoAnalyzerAgent
-from readme_ai.readme_agent import ReadmeCompilerAgent
+from readme_ai.agents.repo_analyzer import RepoAnalyzerAgent
+from readme_ai.agents.readme_agent import ReadmeCompilerAgent
 from readme_ai.settings import get_settings
 from dotenv import load_dotenv
 from hypercorn.config import Config
