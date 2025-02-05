@@ -140,7 +140,7 @@ async def generate_readme(request: RepoRequest):
                         "branch": request.branch,
                     },
                     timestamp=timestamp,
-                ).dict(),
+                ).model_dump(),
             )
 
         # Generate README with formatted analysis
@@ -149,7 +149,7 @@ async def generate_readme(request: RepoRequest):
         )
 
         # Cache the generated README
-        cache_service.set(str(request.repo_url), readme_content["readme"])
+        cache_service.set(str(request.repo_url), readme_content["readme"], 24 * 60 * 60)
 
         logger.info("README generation completed successfully")
         return {
