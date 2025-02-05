@@ -4,8 +4,8 @@ import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
-from agents.repo_analyzer import RepoAnalyzerAgent
-from agents.readme_agent import ReadmeCompilerAgent
+from readme_ai.agents.repo_analyzer import RepoAnalyzerAgent
+from readme_ai.agents.readme_agent import ReadmeCompilerAgent
 from readme_ai.settings import get_settings
 from dotenv import load_dotenv
 from hypercorn.config import Config
@@ -13,7 +13,7 @@ from hypercorn.asyncio import serve
 import asyncio
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
-from cache_service.cache import CacheService  # type: ignore
+from readme_ai.cache_service.cache import CacheService  # type: ignore
 
 # Load environment variables and configure logging
 load_dotenv()
@@ -41,6 +41,7 @@ cache_service = CacheService()
 
 
 @asynccontextmanager
+
 async def lifespan(_):
     global repo_analyzer, readme_compiler
     try:

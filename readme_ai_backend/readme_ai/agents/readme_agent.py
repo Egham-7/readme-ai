@@ -4,8 +4,8 @@ from langgraph.graph import StateGraph, START, END  # type:ignore
 from langchain_groq import ChatGroq  # type:ignore
 from pydantic import BaseModel, Field  # type:ignore
 from functools import lru_cache
-from prompts import plan_prompt, writing_readme_prompt
-from templates import default_readme
+from readme_ai.prompts import plan_prompt, writing_readme_prompt
+from readme_ai.templates import default_readme
 
 logger = logging.getLogger(__name__)
 

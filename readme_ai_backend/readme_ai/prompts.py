@@ -1,5 +1,5 @@
 from langchain.prompts import ChatPromptTemplate  # type:ignore
-from templates import default_readme
+
 choose_file_prompt = ChatPromptTemplate.from_messages(
     [
         (
@@ -17,9 +17,7 @@ choose_file_prompt = ChatPromptTemplate.from_messages(
             "Choose files strictly necessary for understanding the project—less is more."
         ),
     ]
-)
-
-            
+)    
 
 binary_extensions = {
             # Audio

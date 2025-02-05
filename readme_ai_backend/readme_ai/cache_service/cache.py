@@ -15,7 +15,7 @@ class CacheService:
         self._retries = {}  # Track retries
         self.DEFAULT_TTL = 24 * 60 * 60  # 24 hours in seconds
 
-    def set(self, repo_url: str, content: str, ttl_seconds: int = None) -> None:
+    def set(self, repo_url: str, content: str, ttl_seconds: int) -> None:
         """Set cache entry with TTL"""
         cache_key = self._generate_cache_key(repo_url)
         self._cache[cache_key] = content

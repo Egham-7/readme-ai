@@ -10,7 +10,7 @@ import logging
 import asyncio  # type:ignore
 from aiohttp import ClientSession  # type:ignore
 from functools import lru_cache
-from prompts import choose_file_prompt, binary_extensions, analyse_file_prompt
+from readme_ai.prompts import choose_file_prompt, binary_extensions, analyse_file_prompt
 logger = logging.getLogger(__name__)
 
 
