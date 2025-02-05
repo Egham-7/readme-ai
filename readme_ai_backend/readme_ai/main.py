@@ -13,7 +13,7 @@ from hypercorn.asyncio import serve
 import asyncio
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
-from cache_service.cache import CacheService  # type: ignore
+from readme_ai.cache_service.cache import CacheService  # type: ignore
 
 # Load environment variables and configure logging
 load_dotenv()
@@ -139,7 +139,7 @@ async def generate_readme(request: RepoRequest):
                         "branch": request.branch,
                     },
                     timestamp=timestamp,
-                ).dict(),
+                ).model_dump(),
             )
 
         # Generate README with formatted analysis
@@ -148,7 +148,7 @@ async def generate_readme(request: RepoRequest):
         )
 
         # Cache the generated README
-        cache_service.set(str(request.repo_url), readme_content["readme"])
+        cache_service.set(str(request.repo_url), readme_content["readme"], 24 * 60 * 60)
 
         logger.info("README generation completed successfully")
         return {
