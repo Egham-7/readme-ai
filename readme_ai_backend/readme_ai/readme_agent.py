@@ -46,7 +46,7 @@ class ReadmeCompilerAgent:
         graph.add_edge("write_readme", END)
 
         logger.info("README generation graph built successfully")
-        return graph.compile()
+        return graph
 
     async def plan(self, state: RepoAnalyzerState) -> RepoAnalyzerState:
         print("\n=== PLANNING README ===")
@@ -179,8 +179,8 @@ class ReadmeCompilerAgent:
         }
 
         try:
-            final_state = await self.graph.ainvoke(initial_state)
-
+            compiled_graph = self.graph.compile()
+            final_state = await compiled_graph.ainvoke(initial_state)  
             return {
                 "repo_url": repo_url,
                 "readme": final_state["readme"],

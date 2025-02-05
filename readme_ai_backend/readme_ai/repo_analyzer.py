@@ -67,7 +67,7 @@ class RepoAnalyzerAgent:
         graph.add_edge(START, "choose_files")
         graph.add_edge("choose_files", "analyze_files")
         graph.add_edge("analyze_files", END)
-        return graph.compile()
+        return graph
 
     async def _choose_files(self, state: RepoAnalyzerState) -> RepoAnalyzerState:
         try:
@@ -279,7 +279,9 @@ class RepoAnalyzerAgent:
             }
 
             print("\n=== STARTING ANALYSIS ===")
-            result = await self.graph.ainvoke(initial_state)
+            compiled_graph = self.graph.compile()
+            result = await compiled_graph.ainvoke(initial_state)  
+
             print("\n=== ANALYSIS COMPLETED ===")
 
             logger.info(f"Final Analysis: {result.get('analysis', [])}")
