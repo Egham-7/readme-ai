@@ -1,5 +1,5 @@
 from typing import Any, Dict, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,7 +13,7 @@ from hypercorn.asyncio import serve
 import asyncio
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
-from cache_service.cache import CacheService
+from cache_service.cache import CacheService  # type: ignore
 
 # Load environment variables and configure logging
 load_dotenv()
@@ -107,7 +107,7 @@ async def generate_readme(request: RepoRequest):
                 "status": "success",
                 "data": cached_readme,
                 "timestamp": timestamp,
-                "cached": True
+                "cached": True,
             }
 
         if not repo_analyzer or not readme_compiler:
@@ -144,7 +144,7 @@ async def generate_readme(request: RepoRequest):
 
         # Generate README with formatted analysis
         readme_content = await readme_compiler.gen_readme(
-            repo_url=request.repo_url, repo_analysis=repo_analysis["analysis"]
+            repo_url=str(request.repo_url), repo_analysis=repo_analysis["analysis"]
         )
 
         # Cache the generated README
@@ -155,7 +155,7 @@ async def generate_readme(request: RepoRequest):
             "status": "success",
             "data": readme_content["readme"],
             "timestamp": timestamp,
-            "cached": False
+            "cached": False,
         }
 
     except ValueError as ve:
@@ -181,6 +181,7 @@ async def generate_readme(request: RepoRequest):
                 timestamp=timestamp,
             ).dict(),
         )
+
 
 @app.post("/generate-readme-with-retries")
 async def generate_readme_with_retries(request: RepoRequest):
@@ -241,7 +242,7 @@ async def generate_readme_with_retries(request: RepoRequest):
 
         # Generate README with formatted analysis
         readme_content = await readme_compiler.gen_readme(
-            repo_url=request.repo_url, repo_analysis=repo_analysis["analysis"]
+            repo_url=str(request.repo_url), repo_analysis=repo_analysis["analysis"]
         )
 
         logger.info("README generation completed successfully")
@@ -274,7 +275,8 @@ async def generate_readme_with_retries(request: RepoRequest):
                 timestamp=datetime.now().isoformat(),
             ).dict(),
         )
-    
+
+
 @app.post("/clear-cache")
 async def clear_cache():
     """Clear the cache"""
@@ -296,4 +298,4 @@ async def clear_cache():
 
 if __name__ == "__main__":
     config = Config()
-    asyncio.run(serve(app, config))
+    asyncio.run(serve(app, config))  # type: ignore

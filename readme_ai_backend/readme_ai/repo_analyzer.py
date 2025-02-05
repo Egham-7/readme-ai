@@ -1,4 +1,3 @@
-import asyncio
 from urllib.parse import urlparse
 from github.ContentFile import ContentFile  # type:ignore
 from github import Github, UnknownObjectException  # type: ignore
@@ -8,7 +7,7 @@ from langchain_groq import ChatGroq  # type: ignore
 from langchain.prompts import ChatPromptTemplate  # type:ignore
 from pydantic import BaseModel, Field  # type:ignore
 import logging
-import asyncio
+import asyncio # type:ignore
 from aiohttp import ClientSession  # type:ignore
 from functools import lru_cache
 
@@ -381,9 +380,3 @@ class RepoAnalyzerAgent:
             )
         finally:
             github_client.close()
-
-
-class AnalysisError(Exception):
-    def __init__(self, message, details=None):
-        super().__init__(message)
-        self.details = details
