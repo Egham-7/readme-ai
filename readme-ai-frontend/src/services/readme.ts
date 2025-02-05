@@ -41,6 +41,32 @@ export class ApiError extends Error {
   }
 }
 
+export const getErrorMessage = (error: ApiError): string => {
+  switch (error.errorCode) {
+    case "VALIDATION_ERROR":
+      return "The GitHub repository URL provided is not valid. Please check the URL and try again.";
+    case "ANALYSIS_FAILED":
+      return "We couldn't analyze this repository. Please verify the repository is public and contains code.";
+    case "SERVICE_UNAVAILABLE":
+      return "Our service is temporarily unavailable. Please try again in a few moments.";
+    default:
+      return "Something went wrong while generating your README. Please try again.";
+  }
+};
+
+export const getErrorAction = (error: ApiError): string => {
+  switch (error.errorCode) {
+    case "VALIDATION_ERROR":
+      return "Check Repository URL";
+    case "ANALYSIS_FAILED":
+      return "Verify Repository Access";
+    case "SERVICE_UNAVAILABLE":
+      return "Try Again Later";
+    default:
+      return "Try Again";
+  }
+};
+
 export const readmeService = {
   generateReadme: async (params: RepoRequestParams): Promise<string> => {
     const response = await fetch(`${API_BASE_URL}/generate-readme`, {
