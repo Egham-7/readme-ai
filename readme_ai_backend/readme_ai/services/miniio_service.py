@@ -1,16 +1,19 @@
 from minio import Minio
-import os
 from typing import BinaryIO
 import uuid
+
+from readme_ai.settings import get_settings
+
+settings = get_settings()
 
 
 class MinioService:
     def __init__(self):
         self.client = Minio(
-            endpoint=os.getenv("MINIO_ENDPOINT", "minio:9000"),
-            access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
-            secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
-            secure=False,
+            endpoint=settings.MINIO_PRIVATE_ENDPOINT,
+            access_key=settings.MINIO_ROOT_USER,
+            secret_key=settings.MINIO_ROOT_PASSWORD,
+            secure=settings.MINIO_SECURE,
         )
         self.bucket_name = "templates"
         self._ensure_bucket_exists()

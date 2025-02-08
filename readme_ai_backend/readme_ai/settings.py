@@ -30,7 +30,27 @@ class Settings(BaseSettings):
     CACHE_TTL: int = 3600  # 1 hour
     MAX_CACHE_SIZE: int = 100
 
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
+    # Database Settings
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL", "postgresql://postgres:secretpassword@postgres:5432/readmeai"
+    )
+
+    # MinIO Settings
+    MINIO_PRIVATE_ENDPOINT: str = os.getenv(
+        "MINIO_PRIVATE_ENDPOINT", "minio:9000")
+    MINIO_ROOT_USER: str = os.getenv("MINIO_ROOT_USER", "minioadmin")
+    MINIO_ROOT_PASSWORD: str = os.getenv("MINIO_ROOT_PASSWORD", "minioadmin")
+    MINIO_BUCKET_NAME: str = "readmeai"
+    MINIO_SECURE: bool = False
+
+    # Logging Settings
+    LOG_LEVEL: str = "INFO"
+    LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+    # Security Settings
+    SECRET_KEY: str = "your-secret-key"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ALGORITHM: str = "HS256"
 
     class Config:
         env_file = ".env"
@@ -40,3 +60,4 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
