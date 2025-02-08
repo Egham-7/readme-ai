@@ -1,5 +1,5 @@
 # Use Python 3.13-slim as base image
-FROM python:3.13-slim as python-base
+FROM python:3.13-slim AS python-base
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -18,10 +18,15 @@ ENV PYTHONUNBUFFERED=1 \
 ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
 
 # Build dependencies stage
-FROM python-base as builder-base
+FROM python-base AS builder-base
+
+# Install system dependencies required for psycopg2
 RUN apt-get update && apt-get install --no-install-recommends -y \
   curl \
-  build-essential
+  build-essential \
+  libpq-dev \
+  python3-dev \
+  gcc
 
 # Install Poetry
 RUN curl -sSL https://install.python-poetry.org | python3 -
@@ -29,14 +34,15 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 # Copy project dependency files
 WORKDIR $PYSETUP_PATH
 COPY poetry.lock pyproject.toml README.md ./
-
 RUN poetry lock
 
 # Install runtime dependencies
-RUN poetry install  --only main --no-root
+RUN poetry install --only main --no-root
 
 # Runtime stage
-FROM python-base as production
+FROM python-base AS production
+
+
 
 # Copy virtual environment from builder
 COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
@@ -56,6 +62,4 @@ EXPOSE 8000
 
 # Start the FastAPI application with Hypercorn
 CMD hypercorn readme_ai.main:app --bind "[::]:$PORT"
-
-
 
