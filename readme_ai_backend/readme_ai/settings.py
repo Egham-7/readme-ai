@@ -36,8 +36,7 @@ class Settings(BaseSettings):
     )
 
     # MinIO Settings
-    MINIO_PRIVATE_ENDPOINT: str = os.getenv(
-        "MINIO_PRIVATE_ENDPOINT", "minio:9000")
+    MINIO_PRIVATE_ENDPOINT: str = os.getenv("MINIO_PRIVATE_ENDPOINT", "minio:9000")
     MINIO_ROOT_USER: str = os.getenv("MINIO_ROOT_USER", "minioadmin")
     MINIO_ROOT_PASSWORD: str = os.getenv("MINIO_ROOT_PASSWORD", "minioadmin")
     MINIO_BUCKET_NAME: str = "readmeai"
@@ -60,4 +59,3 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-

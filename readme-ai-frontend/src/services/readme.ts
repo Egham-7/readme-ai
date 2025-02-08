@@ -29,6 +29,26 @@ export interface ApiSuccessResponse {
   timestamp: string;
 }
 
+export interface Template {
+  id: number;
+  content: string;
+  user_id: string;
+  preview_url?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateTemplatePayload {
+  content: string;
+  user_id: string;
+  preview_file?: File;
+}
+
+export interface UpdateTemplatePayload {
+  content?: string;
+  preview_file?: File;
+}
+
 export class ApiError extends Error {
   constructor(
     public message: string,
@@ -109,6 +129,114 @@ export const readmeService = {
     }
 
     return response.json() as Promise<HealthCheckResponse>;
+  },
+
+  getAllTemplates: async (): Promise<Template[]> => {
+    const response = await fetch(`${API_BASE_URL}/templates/`);
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as ApiErrorResponse;
+      throw new ApiError(
+        errorData.message,
+        errorData.error_code,
+        errorData.details,
+        errorData.timestamp,
+      );
+    }
+
+    return response.json();
+  },
+
+  // Get single template
+  getTemplate: async (id: number): Promise<Template> => {
+    const response = await fetch(`${API_BASE_URL}/templates/${id}`);
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as ApiErrorResponse;
+      throw new ApiError(
+        errorData.message,
+        errorData.error_code,
+        errorData.details,
+        errorData.timestamp,
+      );
+    }
+
+    return response.json();
+  },
+
+  // Create template
+  createTemplate: async (payload: CreateTemplatePayload): Promise<Template> => {
+    const formData = new FormData();
+    formData.append("content", payload.content);
+    formData.append("user_id", payload.user_id);
+    if (payload.preview_file) {
+      formData.append("preview_file", payload.preview_file);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/templates/`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as ApiErrorResponse;
+      throw new ApiError(
+        errorData.message,
+        errorData.error_code,
+        errorData.details,
+        errorData.timestamp,
+      );
+    }
+
+    return response.json();
+  },
+
+  // Update template
+  updateTemplate: async (
+    id: number,
+    payload: UpdateTemplatePayload,
+  ): Promise<Template> => {
+    const formData = new FormData();
+    if (payload.content) {
+      formData.append("content", payload.content);
+    }
+    if (payload.preview_file) {
+      formData.append("preview_file", payload.preview_file);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/templates/${id}`, {
+      method: "PUT",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as ApiErrorResponse;
+      throw new ApiError(
+        errorData.message,
+        errorData.error_code,
+        errorData.details,
+        errorData.timestamp,
+      );
+    }
+
+    return response.json();
+  },
+
+  // Delete template
+  deleteTemplate: async (id: number): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/templates/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as ApiErrorResponse;
+      throw new ApiError(
+        errorData.message,
+        errorData.error_code,
+        errorData.details,
+        errorData.timestamp,
+      );
+    }
   },
 };
 
