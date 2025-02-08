@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { SignInButton, SignUpButton } from "@clerk/clerk-react";
 
 const navLinks = [
   { name: "Features", to: "features" },
@@ -35,16 +36,16 @@ export default function Navbar() {
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <Link to="/home">
+            <SignInButton forceRedirectUrl="/home">
               <Button variant="ghost" className="text-sm">
                 Sign In
               </Button>
-            </Link>
-            <Link to="/home">
+            </SignInButton>
+            <SignUpButton forceRedirectUrl="/home">
               <Button className="text-sm bg-gradient-to-r from-primary to-accent hover:opacity-90">
                 Get Started
               </Button>
-            </Link>
+            </SignUpButton>
           </div>
         </div>
       </div>

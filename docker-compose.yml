@@ -6,11 +6,12 @@ services:
       - "3000:3000"
     depends_on:
       - backend
+    env_file:
+      - ./readme-ai-frontend/.env.local
     environment:
       - VITE_BASE_API_URL=http://localhost:8000
-    volumes:
-      - ./readme-ai-frontend:/app
-      - /app/node_modules
+      - VITE_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/home
+      - VITE_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/home
     networks:
       - app-network
 

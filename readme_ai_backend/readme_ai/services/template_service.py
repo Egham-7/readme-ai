@@ -15,7 +15,7 @@ class TemplateService:
     def create_template(
         self,
         content: str,
-        user_id: Optional[str] = None,
+        user_id: str,
         preview_image: Optional[bytes] = None,
     ) -> Template:
         try:

@@ -11,7 +11,7 @@ class Template(Base):
     __tablename__ = "templates"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    user_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    user_id: Mapped[str] = mapped_column(String, nullable=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     preview_image: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     preview_url: str = ""

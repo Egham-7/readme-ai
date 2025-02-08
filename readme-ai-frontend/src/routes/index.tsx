@@ -7,10 +7,10 @@ import Footer from "@/components/landing-page/footer";
 import Navbar from "@/components/landing-page/navbar";
 
 export const Route = createFileRoute("/")({
-  component: HomeRoute,
+  component: LandingPageRoute,
 });
 
-function HomeRoute() {
+function LandingPageRoute() {
   return (
     <div className="bg-background text-foreground">
       <Navbar />
