@@ -1,0 +1,76 @@
+services:
+  frontend:
+    build:
+      context: ./readme-ai-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - VITE_BASE_API_URL=http://localhost:8000
+    volumes:
+      - ./readme-ai-frontend:/app
+      - /app/node_modules
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./readme_ai_backend
+    env_file:
+      - ./readme_ai_backend/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - minio
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=readmeai
+      - DB_USER=postgres
+      - DB_PASSWORD=secretpassword
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - PORT=8000
+
+    volumes:
+      - ./readme_ai_backend:/app
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=readmeai
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secretpassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:

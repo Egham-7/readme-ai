@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings  # type: ignore
 from functools import lru_cache
+import os
 
 
 class Settings(BaseSettings):
@@ -28,6 +29,11 @@ class Settings(BaseSettings):
     # Cache Settings
     CACHE_TTL: int = 3600  # 1 hour
     MAX_CACHE_SIZE: int = 100
+
+    DATABASE_URL: str = (
+        f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{
+        os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
+    )
 
     class Config:
         env_file = ".env"
