@@ -71,11 +71,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.exception_handler(RateLimitExceeded)
+async def custom_rate_limit_handler(request, exc):
+    print(f"Rate limit exceeded: {repr(exc)}")
+    return JSONResponse(
+        status_code=429,
+        content={
+            "message": "Rate limit exceeded",
+            "error_code": "RATE_LIMIT_EXCEEDED",
+            "details": {
+                "limit": str(exc.limit),
+                "reset_at": exc.reset_at.isoformat() if exc.reset_at else None,
+                "retry_after": exc.retry_after,
+            },
+            "timestamp": datetime.now().isoformat(),
+        },
+    )
+
+
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(
-    RateLimitExceeded, _rate_limit_exceeded_handler
-)  # type: ignore
+    RateLimitExceeded, custom_rate_limit_handler)  # type: ignore
 
 
 class RepoRequest(BaseModel):
@@ -167,7 +185,8 @@ async def generate_readme(request: RepoRequest):
             content=ErrorResponse(
                 message="Internal server error during README generation",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
@@ -201,7 +220,8 @@ async def create_template(
             content=ErrorResponse(
                 message="Internal server error during template creation.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
@@ -231,7 +251,8 @@ def get_template(
             content=ErrorResponse(
                 message="Internal server error while retrieving template.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
@@ -255,7 +276,8 @@ def get_all_templates(
             content=ErrorResponse(
                 message="Internal server error while retrieving templates.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
@@ -291,7 +313,8 @@ async def update_template(
             content=ErrorResponse(
                 message="Internal server error while updating template.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
@@ -320,7 +343,8 @@ def delete_template(
             content=ErrorResponse(
                 message="Internal server error while deleting template.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
