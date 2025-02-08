@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from readme_ai.agents.repo_analyzer import RepoAnalyzerAgent
 from readme_ai.agents.readme_agent import ReadmeCompilerAgent
-from readme_ai.settings import get_settings
+from readme_ai.settings import get_settings, MissingEnvironmentVariable
 from dotenv import load_dotenv
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
@@ -22,15 +22,22 @@ from readme_ai.models.requests.templates import (
 from readme_ai.logging_config import logger
 from readme_ai.database import get_db
 from readme_ai.models.requests.readme import ErrorResponse, RepoRequest
+from readme_ai.auth import require_auth
 
 from sqlalchemy.orm import Session
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from readme_ai.auth import AuthenticationError  # type: ignore
 
 # Load environment variables and configure logging
 load_dotenv()
-settings = get_settings()
+
+try:
+    settings = get_settings()
+except MissingEnvironmentVariable as e:
+    print(f"Configuration error: {e.message}")
+    exit(1)
 
 
 # Initialize agents at startup
@@ -64,11 +71,26 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[settings.APP_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(AuthenticationError)
+async def authentication_error_handler(request: Request, exc: AuthenticationError):
+    return JSONResponse(
+        status_code=401,
+        content={
+            "message": "Authentication failed",
+            "error_code": "UNAUTHORIZED",
+            "details": {
+                "reason": exc.detail,
+            },
+            "timestamp": datetime.now().isoformat(),
+        },
+    )
 
 
 @app.exception_handler(RateLimitExceeded)
@@ -96,6 +118,7 @@ app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)  # type:
 
 @app.get("/")
 @limiter.limit("10/minute")
+@require_auth()
 async def root(request: Request):
     """Health check endpoint"""
     return {
@@ -110,6 +133,7 @@ async def root(request: Request):
 
 @app.post("/generate-readme")
 @limiter.limit("5/minute")
+@require_auth()
 async def generate_readme(request: Request, repo_request: RepoRequest):
     """Generate README asynchronously"""
     timestamp = datetime.now().isoformat()
@@ -190,6 +214,7 @@ async def generate_readme(request: Request, repo_request: RepoRequest):
     "/templates/", response_model=TemplateResponse, status_code=status.HTTP_201_CREATED
 )
 @limiter.limit("10/minute")
+@require_auth()
 async def create_template(
     request: Request,
     template: TemplateCreate,
@@ -197,6 +222,8 @@ async def create_template(
     minio_service: MinioService = Depends(get_minio_service),
 ):
     timestamp = datetime.now().isoformat()
+    user = request.state.user
+
     try:
         preview_image_bytes = (
             await template.preview_file.read() if template.preview_file else None
@@ -205,7 +232,7 @@ async def create_template(
         service = TemplateService(repository, minio_service)
         return service.create_template(
             content=template.content,
-            user_id=template.user_id,
+            user_id=user["id"],
             preview_image=preview_image_bytes,
         )
     except Exception as e:
@@ -223,6 +250,7 @@ async def create_template(
 
 @app.get("/templates/{template_id}", response_model=TemplateResponse)
 @limiter.limit("20/minute")
+@require_auth()
 def get_template(
     request: Request,
     template_id: int,
@@ -230,15 +258,24 @@ def get_template(
     minio_service: MinioService = Depends(get_minio_service),
 ):
     timestamp = datetime.now().isoformat()
+    user = request.state.user
     try:
         repository = TemplateRepository(db)
         service = TemplateService(repository, minio_service)
         template = service.get_template(template_id)
+
         if template is None:
             raise HTTPException(status_code=404, detail="Template not found")
+
+        if template.user_id != user["id"]:
+            raise AuthenticationError("Not allowed to view this template.")
+
         return template
     except HTTPException as he:
         raise he
+
+    except AuthenticationError as ae:
+        raise ae
     except Exception as e:
         logger.error(f"Error retrieving template: {str(e)}")
         return JSONResponse(
@@ -254,16 +291,20 @@ def get_template(
 
 @app.get("/templates/", response_model=List[TemplateResponse])
 @limiter.limit("20/minute")
+@require_auth()
 def get_all_templates(
     request: Request,
     db: Session = Depends(get_db),
     minio_service: MinioService = Depends(get_minio_service),
 ):
     timestamp = datetime.now().isoformat()
+
     try:
         repository = TemplateRepository(db)
         service = TemplateService(repository, minio_service)
+
         return service.get_all_templates()
+
     except Exception as e:
         logger.error(f"Error retrieving all templates: {str(e)}")
         return JSONResponse(
@@ -279,28 +320,44 @@ def get_all_templates(
 
 @app.put("/templates/{template_id}", response_model=TemplateResponse)
 @limiter.limit("10/minute")
+@require_auth()
 async def update_template(
     request: Request,
     template_id: int,
-    template: TemplateUpdate,
+    template_req: TemplateUpdate,
     db: Session = Depends(get_db),
     minio_service: MinioService = Depends(get_minio_service),
 ):
     timestamp = datetime.now().isoformat()
+    user = request.state.user
+
     try:
         repository = TemplateRepository(db)
         service = TemplateService(repository, minio_service)
+
+        template = service.get_template(template_id)
+
+        if not template:
+            raise HTTPException(status_code=404, detail="Template not found")
+
+        if template.user_id != user["id"]:
+            raise AuthenticationError("Not allowed to update this template.")
+
         preview_image_bytes = (
-            await template.preview_file.read() if template.preview_file else None
+            await template_req.preview_file.read()
+            if template_req.preview_file
+            else None
         )
         updated_template = service.update_template(
-            template_id, template.content, preview_image=preview_image_bytes
+            template_id, template_req.content, preview_image=preview_image_bytes
         )
-        if updated_template is None:
-            raise HTTPException(status_code=404, detail="Template not found")
+
         return updated_template
     except HTTPException as he:
         raise he
+
+    except AuthenticationError as ae:
+        raise ae
     except Exception as e:
         logger.error(f"Error updating template: {str(e)}")
         return JSONResponse(
@@ -316,6 +373,7 @@ async def update_template(
 
 @app.delete("/templates/{template_id}")
 @limiter.limit("10/minute")
+@require_auth()
 def delete_template(
     request: Request,
     template_id: int,
@@ -323,11 +381,22 @@ def delete_template(
     minio_service: MinioService = Depends(get_minio_service),
 ):
     timestamp = datetime.now().isoformat()
+    user = request.state.user
+
     try:
         repository = TemplateRepository(db)
         service = TemplateService(repository, minio_service)
-        if not service.delete_template(template_id):
-            raise HTTPException(status_code=404, detail="Template not found")
+
+        template = service.get_template(template_id)
+
+        if not template:
+            raise HTTPException(status_code=404, detail="Template not found.")
+
+        if template.user_id != user["id"]:
+            raise AuthenticationError("Not allowed to delete this template")
+
+        service.delete_template(template_id)
+
         return {"message": "Template deleted successfully"}
     except HTTPException as he:
         raise he

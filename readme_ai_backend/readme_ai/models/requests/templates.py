@@ -8,9 +8,6 @@ class TemplateCreate(BaseModel):
     content: str = Field(
         min_length=1, max_length=10000, description="Markdown template content"
     )
-    user_id: Optional[str] = Field(
-        default=None, max_length=100, description="Optional user identifier"
-    )
     preview_file: Optional[UploadFile] = Field(
         default=None, description="Optional preview image (PNG or JPEG, max 5MB)"
     )

@@ -1,6 +1,16 @@
 from pydantic_settings import BaseSettings  # type: ignore
 from functools import lru_cache
 import os
+from typing import Optional
+
+
+class MissingEnvironmentVariable(Exception):
+    """Exception raised when a required environment variable is missing"""
+
+    def __init__(self, variable_name: str):
+        self.message = f"Critical environment variable '{
+            variable_name}' is missing"
+        super().__init__(self.message)
 
 
 class Settings(BaseSettings):
@@ -46,16 +56,31 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
-    # Security Settings
-    SECRET_KEY: str = "your-secret-key"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    ALGORITHM: str = "HS256"
+    # Authentication Settings
+    CLERK_SECRET_KEY: Optional[str] = None
+    CLERK_PUBLISHABLE_KEY: Optional[str] = None
+    APP_URL: str = os.getenv("APP_URL", "http://localhost:3000")
 
     class Config:
         env_file = ".env"
         case_sensitive = True
 
+    def validate_critical_variables(self):
+        critical_vars = {
+            "CLERK_SECRET_KEY": self.CLERK_SECRET_KEY,
+            "CLERK_PUBLISHABLE_KEY": self.CLERK_PUBLISHABLE_KEY,
+            "DATABASE_URL": self.DATABASE_URL,
+            "GITHUB_TOKEN": self.GITHUB_TOKEN,
+            "GROQ_API_KEY": self.GROQ_API_KEY,
+        }
+
+        for var_name, var_value in critical_vars.items():
+            if not var_value or var_value == "test":
+                raise MissingEnvironmentVariable(var_name)
+
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    settings = Settings()
+    settings.validate_critical_variables()
+    return settings

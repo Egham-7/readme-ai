@@ -31,18 +31,21 @@ class TemplateService:
         except Exception as e:
             raise Exception(f"Failed to create template: {str(e)}")
 
-    def get_template(self, template_id: int) -> Template:
+    def get_template(self, template_id: int) -> Optional[Template]:
         template = self.repository.get_by_id(template_id)
-        if not template:
-            raise Exception(f"Template with id {template_id} not found")
 
-        if template.preview_image:
-            try:
-                template.preview_url = self.minio_service.get_file_url(
-                    template.preview_image
-                )
-            except Exception as e:
-                raise Exception(f"Failed to get preview URL: {str(e)}")
+        if not template:
+            return None
+
+        if not template.preview_image:
+            return template
+
+        try:
+            template.preview_url = self.minio_service.get_file_url(
+                template.preview_image
+            )
+        except Exception as e:
+            raise Exception(f"Failed to get preview URL: {str(e)}")
         return template
 
     def get_all_templates(self) -> List[Template]:
