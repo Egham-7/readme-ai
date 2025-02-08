@@ -25,11 +25,7 @@ services:
       - postgres
       - minio
     environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=readmeai
-      - DB_USER=postgres
-      - DB_PASSWORD=secretpassword
+      - DATABASE_URL=postgresql://postgres:secretpassword@postgres:5432/readmeai
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin

@@ -30,10 +30,7 @@ class Settings(BaseSettings):
     CACHE_TTL: int = 3600  # 1 hour
     MAX_CACHE_SIZE: int = 100
 
-    DATABASE_URL: str = (
-        f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{
-        os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
-    )
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
 
     class Config:
         env_file = ".env"
