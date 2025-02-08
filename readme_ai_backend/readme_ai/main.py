@@ -12,7 +12,7 @@ from hypercorn.asyncio import serve
 import asyncio
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
-from readme_ai.services.cache_service.cache import CacheService  # type: ignore
+from readme_ai.services.cache_service import CacheService  # type: ignore
 from readme_ai.repositories.template_repository import TemplateRepository
 from readme_ai.services.template_service import TemplateService
 from readme_ai.services.miniio_service import MinioService, get_minio_service
