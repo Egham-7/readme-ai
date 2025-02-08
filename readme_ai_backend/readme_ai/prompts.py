@@ -4,20 +4,21 @@ choose_file_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are a repository analysis expert. Identify the most essential files based on their position and name. Prioritize:\n"
-            "1. Main entry point or core implementation file\n"
-            "2. Primary configuration file\n"
-            "3. Key documentation, if available\n"
-            "4. Build/deployment definition\n\n"
-            "Return only the exact file paths in order of importance, from most to least.",
+            "You are a README documentation expert. Select only the essential files needed to create an effective README. Focus on:\n"
+            "1. Files that demonstrate the core purpose and functionality\n"
+            "2. Configuration files that show how to set up the project\n"
+            "3. Files containing API endpoints or main interfaces\n"
+            "4. Entry points that show how to run the project\n\n"
+            "Return only the minimum number of file paths needed for README creation, ordered by importance. Select no more than 3-4 files total.",
         ),
         (
             "human",
-            "Analyze this repository structure and select only the most critical files based on their relevance:\n{repo_tree_md}\n\n"
-            "Choose files strictly necessary for understanding the project—less is more.",
+            "From this repository structure, select only the files strictly necessary for creating an informative README:\n{repo_tree_md}\n\n"
+            "Focus on files that will help users understand how to use, set up, and run the project. Be extremely selective - choose only what's essential for the README.",
         ),
     ]
 )
+
 
 binary_extensions = {
     # Audio
@@ -116,37 +117,31 @@ plan_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are a technical documentation strategist crafting an effective README plan. Prioritize clarity, completeness, and usability by focusing on:\n\n"
-            "1. **Content Strategy**\n"
-            "   - Core features and unique selling points\n"
-            "   - High-level technical architecture\n"
-            "   - Key differentiators of the project\n\n"
-            "2. **Structure Design**\n"
-            "   - Logical section flow and organization\n"
-            "   - Clear hierarchy for readability\n"
-            "   - Ensuring content completeness\n\n"
-            "3. **Technical Depth**\n"
-            "   - Selecting relevant code examples\n"
-            "   - Configuration and setup instructions\n"
-            "   - Integration and usage patterns\n\n"
-            "4. **Documentation Scope**\n"
-            "   - API references (if applicable)\n"
-            "   - Installation and setup requirements\n"
-            "   - Deployment and usage guidelines\n"
-            "   - Contribution and maintenance notes\n\n"
-            "5. **Template Format**\n"
+            "You are a README specialist focused on creating clear, user-friendly documentation. Structure your README plan with:\n\n"
+            "1. **Project Overview**\n"
+            "   - Project name and description\n"
+            "   - Key features\n\n"
+            "2. **Getting Started**\n"
+            "   - Prerequisites\n"
+            "   - Installation steps\n\n"
+            "3. **Usage**\n"
+            "   - Basic examples\n"
+            "   - Common use cases\n\n"
+            "4. **Additional Information**\n"
+            "   - Configuration\n"
+            "   - Contributing guidelines\n"
+            "   - License\n\n"
             "{template}"
-            "Ensure the plan is concise, structured, and tailored to the project's complexity.",
+            "Keep the plan focused on essential README elements.",
         ),
         (
             "human",
-            "Based on the following analysis, create a structured README plan for next repo: {repo_url}:\n\n"
-            "**Analysis Data:**\n{repo_analysis}\n\n"
-            "Provide a refined, actionable documentation outline.",
+            "Create a README plan for: {repo_url}\n"
+            "Based on this analysis:\n{repo_analysis}\n"
+            "Provide a clear README outline.",
         ),
     ]
 )
-
 
 writing_readme_prompt = ChatPromptTemplate.from_messages(
     [
