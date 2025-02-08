@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
 from typing import Dict, Optional, Any
 
 
@@ -8,3 +8,8 @@ class ErrorResponse(BaseModel):
     error_code: str
     details: Optional[Dict[str, Any]] = None
     timestamp: str
+
+
+class RepoRequest(BaseModel):
+    repo_url: HttpUrl
+    branch: Optional[str] = "main"

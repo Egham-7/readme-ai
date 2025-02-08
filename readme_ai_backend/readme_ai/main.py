@@ -1,8 +1,7 @@
 from typing import Optional, List
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, HttpUrl
 from readme_ai.agents.repo_analyzer import RepoAnalyzerAgent
 from readme_ai.agents.readme_agent import ReadmeCompilerAgent
 from readme_ai.settings import get_settings
@@ -22,7 +21,7 @@ from readme_ai.models.requests.templates import (
 )
 from readme_ai.logging_config import logger
 from readme_ai.database import get_db
-from readme_ai.models.requests.readme import ErrorResponse
+from readme_ai.models.requests.readme import ErrorResponse, RepoRequest
 
 from sqlalchemy.orm import Session
 from slowapi import Limiter
@@ -95,14 +94,9 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)  # type: ignore
 
 
-class RepoRequest(BaseModel):
-    repo_url: HttpUrl
-    branch: Optional[str] = "main"
-
-
 @app.get("/")
 @limiter.limit("10/minute")
-async def root():
+async def root(request: Request):
     """Health check endpoint"""
     return {
         "status": "online",
@@ -116,7 +110,7 @@ async def root():
 
 @app.post("/generate-readme")
 @limiter.limit("5/minute")
-async def generate_readme(request: RepoRequest):
+async def generate_readme(request: Request, repo_request: RepoRequest):
     """Generate README asynchronously"""
     timestamp = datetime.now().isoformat()
 
@@ -136,7 +130,9 @@ async def generate_readme(request: RepoRequest):
             )
 
         # Get repository analysis
-        repo_analysis = await repo_analyzer.analyze_repo(repo_url=str(request.repo_url))
+        repo_analysis = await repo_analyzer.analyze_repo(
+            repo_url=str(repo_request.repo_url)
+        )
 
         if repo_analysis.get("status") == "error":
             return JSONResponse(
@@ -145,9 +141,9 @@ async def generate_readme(request: RepoRequest):
                     message="Repository analysis failed",
                     error_code="ANALYSIS_FAILED",
                     details={
-                        "repo_url": str(request.repo_url),
+                        "repo_url": str(repo_request.repo_url),
                         "error_message": repo_analysis.get("message", "Unknown error"),
-                        "branch": request.branch,
+                        "branch": repo_request.branch,
                     },
                     timestamp=timestamp,
                 ).model_dump(),
@@ -155,7 +151,7 @@ async def generate_readme(request: RepoRequest):
 
         # Generate README with formatted analysis
         readme_content = await readme_compiler.gen_readme(
-            repo_url=str(request.repo_url), repo_analysis=repo_analysis["analysis"]
+            repo_url=str(repo_request.repo_url), repo_analysis=repo_analysis["analysis"]
         )
 
         logger.info("README generation completed successfully")
@@ -195,6 +191,7 @@ async def generate_readme(request: RepoRequest):
 )
 @limiter.limit("10/minute")
 async def create_template(
+    request: Request,
     template: TemplateCreate,
     db: Session = Depends(get_db),
     minio_service: MinioService = Depends(get_minio_service),
@@ -227,6 +224,7 @@ async def create_template(
 @app.get("/templates/{template_id}", response_model=TemplateResponse)
 @limiter.limit("20/minute")
 def get_template(
+    request: Request,
     template_id: int,
     db: Session = Depends(get_db),
     minio_service: MinioService = Depends(get_minio_service),
@@ -257,6 +255,7 @@ def get_template(
 @app.get("/templates/", response_model=List[TemplateResponse])
 @limiter.limit("20/minute")
 def get_all_templates(
+    request: Request,
     db: Session = Depends(get_db),
     minio_service: MinioService = Depends(get_minio_service),
 ):
@@ -281,6 +280,7 @@ def get_all_templates(
 @app.put("/templates/{template_id}", response_model=TemplateResponse)
 @limiter.limit("10/minute")
 async def update_template(
+    request: Request,
     template_id: int,
     template: TemplateUpdate,
     db: Session = Depends(get_db),
@@ -317,6 +317,7 @@ async def update_template(
 @app.delete("/templates/{template_id}")
 @limiter.limit("10/minute")
 def delete_template(
+    request: Request,
     template_id: int,
     db: Session = Depends(get_db),
     minio_service: MinioService = Depends(get_minio_service),
