@@ -12,7 +12,6 @@ from hypercorn.asyncio import serve
 import asyncio
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
-from readme_ai.services.cache_service import CacheService  # type: ignore
 from readme_ai.repositories.template_repository import TemplateRepository
 from readme_ai.services.template_service import TemplateService
 from readme_ai.services.miniio_service import MinioService, get_minio_service
@@ -26,6 +25,9 @@ from readme_ai.database import get_db
 from readme_ai.models.requests.readme import ErrorResponse
 
 from sqlalchemy.orm import Session
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 # Load environment variables and configure logging
 load_dotenv()
@@ -35,10 +37,6 @@ settings = get_settings()
 # Initialize agents at startup
 repo_analyzer: Optional[RepoAnalyzerAgent] = None
 readme_compiler: Optional[ReadmeCompilerAgent] = None
-
-
-# Instantiate CacheService
-cache_service = CacheService()
 
 
 @asynccontextmanager
@@ -73,6 +71,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(
+    RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore
+
 
 class RepoRequest(BaseModel):
     repo_url: HttpUrl
@@ -80,6 +83,7 @@ class RepoRequest(BaseModel):
 
 
 @app.get("/")
+@limiter.limit("10/minute")
 async def root():
     """Health check endpoint"""
     return {
@@ -93,24 +97,12 @@ async def root():
 
 
 @app.post("/generate-readme")
+@limiter.limit("5/minute")
 async def generate_readme(request: RepoRequest):
-    """Generate README asynchronously with caching"""
-
-    # Generate a timestamp string
+    """Generate README asynchronously"""
     timestamp = datetime.now().isoformat()
 
     try:
-        # Check if the repository's README is already cached
-        cached_readme = cache_service.get(str(request.repo_url))
-        if cached_readme:
-            logger.info(f"Returning cached README for {request.repo_url}")
-            return {
-                "status": "success",
-                "data": cached_readme,
-                "timestamp": timestamp,
-                "cached": True,
-            }
-
         if not repo_analyzer or not readme_compiler:
             raise HTTPException(
                 status_code=503,
@@ -148,15 +140,11 @@ async def generate_readme(request: RepoRequest):
             repo_url=str(request.repo_url), repo_analysis=repo_analysis["analysis"]
         )
 
-        # Cache the generated README
-        cache_service.set(str(request.repo_url), readme_content["readme"], 24 * 60 * 60)
-
         logger.info("README generation completed successfully")
         return {
             "status": "success",
             "data": readme_content["readme"],
             "timestamp": timestamp,
-            "cached": False,
         }
 
     except ValueError as ve:
@@ -178,7 +166,8 @@ async def generate_readme(request: RepoRequest):
             content=ErrorResponse(
                 message="Internal server error during README generation",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
@@ -187,6 +176,7 @@ async def generate_readme(request: RepoRequest):
 @app.post(
     "/templates/", response_model=TemplateResponse, status_code=status.HTTP_201_CREATED
 )
+@limiter.limit("10/minute")
 async def create_template(
     template: TemplateCreate,
     db: Session = Depends(get_db),
@@ -211,13 +201,15 @@ async def create_template(
             content=ErrorResponse(
                 message="Internal server error during template creation.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
 
 
 @app.get("/templates/{template_id}", response_model=TemplateResponse)
+@limiter.limit("20/minute")
 def get_template(
     template_id: int,
     db: Session = Depends(get_db),
@@ -240,13 +232,15 @@ def get_template(
             content=ErrorResponse(
                 message="Internal server error while retrieving template.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
 
 
 @app.get("/templates/", response_model=List[TemplateResponse])
+@limiter.limit("20/minute")
 def get_all_templates(
     db: Session = Depends(get_db),
     minio_service: MinioService = Depends(get_minio_service),
@@ -263,13 +257,15 @@ def get_all_templates(
             content=ErrorResponse(
                 message="Internal server error while retrieving templates.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
 
 
 @app.put("/templates/{template_id}", response_model=TemplateResponse)
+@limiter.limit("10/minute")
 async def update_template(
     template_id: int,
     template: TemplateUpdate,
@@ -298,13 +294,15 @@ async def update_template(
             content=ErrorResponse(
                 message="Internal server error while updating template.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
 
 
 @app.delete("/templates/{template_id}")
+@limiter.limit("10/minute")
 def delete_template(
     template_id: int,
     db: Session = Depends(get_db),
@@ -326,7 +324,8 @@ def delete_template(
             content=ErrorResponse(
                 message="Internal server error while deleting template.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
