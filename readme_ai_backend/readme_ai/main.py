@@ -1,6 +1,15 @@
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, Depends, status, Request
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    Depends,
+    status,
+    Request,
+    Query,
+    Form,
+    UploadFile,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from readme_ai.agents.repo_analyzer import RepoAnalyzerAgent
 from readme_ai.agents.readme_agent import ReadmeCompilerAgent
@@ -15,16 +24,16 @@ from readme_ai.repositories.template_repository import TemplateRepository
 from readme_ai.services.template_service import TemplateService
 from readme_ai.services.miniio_service import MinioService, get_minio_service
 from readme_ai.models.requests.templates import (
-    TemplateCreate,
     TemplateUpdate,
-    TemplateResponse,
 )
+from readme_ai.models.responses.template import TemplatesResponse, TemplateResponse
 from readme_ai.logging_config import logger
 from readme_ai.database import get_db
 from readme_ai.models.requests.readme import ErrorResponse, RepoRequest
-from readme_ai.auth import require_auth
+from readme_ai.auth import require_auth, ClerkUser
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -71,7 +80,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.APP_URL],
+    allow_origins=["http://localhost:3000", settings.APP_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -217,24 +226,32 @@ async def generate_readme(request: Request, repo_request: RepoRequest):
 @require_auth()
 async def create_template(
     request: Request,
-    template: TemplateCreate,
-    db: Session = Depends(get_db),
+    content: str = Form(...),
+    preview_file: UploadFile = Form(None),
+    db: AsyncSession = Depends(get_db),
     minio_service: MinioService = Depends(get_minio_service),
 ):
     timestamp = datetime.now().isoformat()
-    user = request.state.user
-
+    user: ClerkUser = request.state.user
     try:
-        preview_image_bytes = (
-            await template.preview_file.read() if template.preview_file else None
-        )
+        preview_image_bytes = await preview_file.read() if preview_file else None
         repository = TemplateRepository(db)
         service = TemplateService(repository, minio_service)
-        return service.create_template(
-            content=template.content,
-            user_id=user["id"],
+        template = await service.create_template(
+            content=content,
+            user_id=user.get_user_id(),
             preview_image=preview_image_bytes,
         )
+        template_dict = template.to_dict()
+
+        logger.info(f"Template Dict: {template_dict} ")
+
+        template_response = TemplateResponse(**template_dict)
+
+        logger.info(f"Templaate Response: {template_response}")
+
+        return template_response
+
     except Exception as e:
         logger.error(f"Template creation error: {str(e)}")
         return JSONResponse(
@@ -251,23 +268,23 @@ async def create_template(
 @app.get("/templates/{template_id}", response_model=TemplateResponse)
 @limiter.limit("20/minute")
 @require_auth()
-def get_template(
+async def get_template(
     request: Request,
     template_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     minio_service: MinioService = Depends(get_minio_service),
 ):
     timestamp = datetime.now().isoformat()
-    user = request.state.user
+    user: ClerkUser = request.state.user
     try:
         repository = TemplateRepository(db)
         service = TemplateService(repository, minio_service)
-        template = service.get_template(template_id)
+        template = await service.get_template(template_id)
 
         if template is None:
             raise HTTPException(status_code=404, detail="Template not found")
 
-        if template.user_id != user["id"]:
+        if template.user_id != user.get_user_id():
             raise AuthenticationError("Not allowed to view this template.")
 
         return template
@@ -289,13 +306,59 @@ def get_template(
         )
 
 
-@app.get("/templates/", response_model=List[TemplateResponse])
+@app.get("/templates/user/{user_id}", response_model=TemplatesResponse)
 @limiter.limit("20/minute")
 @require_auth()
-def get_all_templates(
+async def get_user_templates(
     request: Request,
-    db: Session = Depends(get_db),
+    user_id: str,
+    db: AsyncSession = Depends(get_db),
     minio_service: MinioService = Depends(get_minio_service),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
+):
+    timestamp = datetime.now().isoformat()
+    user: ClerkUser = request.state.user
+
+    if user_id != user.get_user_id():
+        raise AuthenticationError("Not allowed to view this template.")
+
+    try:
+        repository = TemplateRepository(db)
+        service = TemplateService(repository, minio_service)
+        templates, total_pages = await service.get_all_by_user_id(
+            user_id=user_id, page=page, page_size=page_size
+        )
+
+        templates_dict = [template.to_dict() for template in templates]
+
+        return TemplatesResponse(data=templates_dict, total_pages=total_pages)
+
+    except HTTPException as he:
+        raise he
+
+    except Exception as e:
+        logger.error(f"Error retrieving user templates: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content=ErrorResponse(
+                message="Internal server error while retrieving user templates.",
+                error_code="INTERNAL_SERVER_ERROR",
+                details={"error_type": type(e).__name__, "error_message": str(e)},
+                timestamp=timestamp,
+            ).dict(),
+        )
+
+
+@app.get("/templates/", response_model=TemplatesResponse)
+@limiter.limit("20/minute")
+@require_auth()
+async def get_all_templates(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    minio_service: MinioService = Depends(get_minio_service),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
 ):
     timestamp = datetime.now().isoformat()
 
@@ -303,7 +366,13 @@ def get_all_templates(
         repository = TemplateRepository(db)
         service = TemplateService(repository, minio_service)
 
-        return service.get_all_templates()
+        templates, total_pages = await service.get_all_templates(
+            page=page, page_size=page_size
+        )
+
+        templates_dict = [template.to_dict() for template in templates]
+
+        return TemplatesResponse(data=templates_dict, total_pages=total_pages)
 
     except Exception as e:
         logger.error(f"Error retrieving all templates: {str(e)}")
@@ -325,22 +394,22 @@ async def update_template(
     request: Request,
     template_id: int,
     template_req: TemplateUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     minio_service: MinioService = Depends(get_minio_service),
 ):
     timestamp = datetime.now().isoformat()
-    user = request.state.user
+    user: ClerkUser = request.state.user
 
     try:
         repository = TemplateRepository(db)
         service = TemplateService(repository, minio_service)
 
-        template = service.get_template(template_id)
+        template = await service.get_template(template_id)
 
         if not template:
             raise HTTPException(status_code=404, detail="Template not found")
 
-        if template.user_id != user["id"]:
+        if template.user_id != user.get_user_id():
             raise AuthenticationError("Not allowed to update this template.")
 
         preview_image_bytes = (
@@ -374,28 +443,28 @@ async def update_template(
 @app.delete("/templates/{template_id}")
 @limiter.limit("10/minute")
 @require_auth()
-def delete_template(
+async def delete_template(
     request: Request,
     template_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     minio_service: MinioService = Depends(get_minio_service),
 ):
     timestamp = datetime.now().isoformat()
-    user = request.state.user
+    user: ClerkUser = request.state.user
 
     try:
         repository = TemplateRepository(db)
         service = TemplateService(repository, minio_service)
 
-        template = service.get_template(template_id)
+        template = await service.get_template(template_id)
 
         if not template:
             raise HTTPException(status_code=404, detail="Template not found.")
 
-        if template.user_id != user["id"]:
+        if template.user_id != user.get_user_id():
             raise AuthenticationError("Not allowed to delete this template")
 
-        service.delete_template(template_id)
+        await service.delete_template(template_id)
 
         return {"message": "Template deleted successfully"}
     except HTTPException as he:

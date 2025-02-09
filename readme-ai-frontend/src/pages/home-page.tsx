@@ -17,14 +17,14 @@ const COPY_TIMEOUT = 2000;
 
 const formSchema = z.object({
   githubLink: z.string().url("Please enter a valid GitHub repository URL"),
-  templateId: z.string().min(1, "Please select a template").optional(),
+  templateId: z.number().optional(),
 });
 
 export type FormSchema = z.infer<typeof formSchema>;
 
 export function HomePage() {
   const [step, setStep] = useState<Step>(1);
-  const [templateId, setTemplateId] = useState<string | null>(null);
+  const [templateId, setTemplateId] = useState<number | undefined>(undefined);
   const [isCopied, setIsCopied] = useState(false);
   const [error, setError] = useState<ApiError | undefined>();
   const { toast } = useToast();

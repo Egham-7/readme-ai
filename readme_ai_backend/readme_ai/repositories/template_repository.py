@@ -1,13 +1,14 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import List, Optional
-from ..models.template import Template
+from readme_ai.models.template import Template
 
 
 class TemplateRepository:
-    def __init__(self, db_session: Session):
+    def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    def create(
+    async def create(
         self,
         content: str,
         user_id: Optional[str] = None,
@@ -17,34 +18,67 @@ class TemplateRepository:
             content=content, user_id=user_id, preview_image=preview_image
         )
         self.db_session.add(template)
-        self.db_session.commit()
-        self.db_session.refresh(template)
+        await self.db_session.commit()
+        await self.db_session.refresh(template)
         return template
 
-    def get_by_id(self, template_id: int) -> Optional[Template]:
-        return (
-            self.db_session.query(Template).filter(Template.id == template_id).first()
+    async def get_by_id(self, template_id: int) -> Optional[Template]:
+        result = await self.db_session.execute(
+            select(Template).filter(Template.id == template_id)
         )
+        return result.scalar_one_or_none()
 
-    def get_all(self) -> List[Template]:
-        return self.db_session.query(Template).all()
+    async def get_all(self, page: int = 1, page_size: int = 10) -> List[Template]:
+        offset = (page - 1) * page_size
+        result = await self.db_session.execute(
+            select(Template).offset(offset).limit(page_size)
+        )
+        return list(result.scalars().all())
 
-    def update(
+    async def get_all_by_user_id(
+        self, user_id: str, page: int = 1, page_size: int = 10
+    ) -> List[Template]:
+        offset = (page - 1) * page_size
+        result = await self.db_session.execute(
+            select(Template)
+            .filter(Template.user_id == user_id)
+            .offset(offset)
+            .limit(page_size)
+        )
+        return list(result.scalars().all())
+
+    async def update(
         self, template_id: int, content: str, preview_image: Optional[str] = None
     ) -> Optional[Template]:
-        template = self.get_by_id(template_id)
+        template = await self.get_by_id(template_id)
         if template:
             template.content = content
             if preview_image is not None:
                 template.preview_image = preview_image
-            self.db_session.commit()
-            self.db_session.refresh(template)
+            await self.db_session.commit()
+            await self.db_session.refresh(template)
         return template
 
-    def delete(self, template_id: int) -> bool:
-        template = self.get_by_id(template_id)
+    async def delete(self, template_id: int) -> bool:
+        template = await self.get_by_id(template_id)
         if template:
-            self.db_session.delete(template)
-            self.db_session.commit()
+            await self.db_session.delete(template)
+            await self.db_session.commit()
             return True
         return False
+
+    async def get_total_count(self) -> int:
+        try:
+            result = await self.db_session.execute(select(Template))
+            return len(result.scalars().all())
+        except Exception as e:
+            raise Exception(f"Failed to get total count: {str(e)}")
+
+    async def get_total_count_by_user_id(self, user_id: str) -> int:
+        try:
+            result = await self.db_session.execute(
+                select(Template).filter(Template.user_id == user_id)
+            )
+            return len(result.scalars().all())
+        except Exception as e:
+            raise Exception(f"Failed to get total count: {str(e)}")

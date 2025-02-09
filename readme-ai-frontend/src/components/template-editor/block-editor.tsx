@@ -1,13 +1,21 @@
-import { useState } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { type DragEndEvent, closestCenter } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import Sidebar from "./sidebar";
 import { Button } from "../ui/button";
 import { DndContext } from "@dnd-kit/core";
 import Preview from "./preview";
+import { type BlockContent, BLOCKS } from "./markdown-blocks";
 
-function BlockEditor({ onSave }: { onSave: (markdown: string) => void }) {
-  const [blocks, setBlocks] = useState<string[]>([]);
+function BlockEditor({
+  onSave,
+  blocks,
+  setBlocks,
+}: {
+  onSave: (markdown: string) => void;
+  blocks: BlockContent[];
+  setBlocks: Dispatch<SetStateAction<BlockContent[]>>;
+}) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -17,7 +25,12 @@ function BlockEditor({ onSave }: { onSave: (markdown: string) => void }) {
     if (over.id === "preview") {
       const blockId = active.id.toString().split("-")[1];
       const uniqueId = `${blockId}-${Date.now().toString()}`;
-      setBlocks((items) => [...items, uniqueId]);
+      const block = BLOCKS.find((b) => b.id === blockId);
+
+      setBlocks((items) => [
+        ...items,
+        { id: uniqueId, content: block?.content || "" },
+      ]);
       return;
     }
 
@@ -26,16 +39,21 @@ function BlockEditor({ onSave }: { onSave: (markdown: string) => void }) {
 
     if (activeId !== overId) {
       setBlocks((items) => {
-        const oldIndex = items.indexOf(activeId);
-        const newIndex = items.indexOf(overId);
+        const oldIndex = items.findIndex((block) => block.id === activeId);
+        const newIndex = items.findIndex((block) => block.id === overId);
         return arrayMove(items, oldIndex, newIndex);
       });
     }
   };
 
   const handleBlockAdd = (id: string) => {
-    setBlocks((items) => [...items, id]);
-    setIsSidebarOpen(false); // Close sidebar after adding block on mobile
+    const block = BLOCKS.find((b) => b.id === id);
+    const uniqueId = `${id}-${Date.now().toString()}`;
+    setBlocks((items) => [
+      ...items,
+      { id: uniqueId, content: block?.content || "" },
+    ]);
+    setIsSidebarOpen(false);
   };
 
   return (

@@ -8,8 +8,8 @@ class MissingEnvironmentVariable(Exception):
     """Exception raised when a required environment variable is missing"""
 
     def __init__(self, variable_name: str):
-        self.message = f"Critical environment variable '{
-            variable_name}' is missing"
+        self.message = f"Critical environment variable {
+            variable_name} is missing"
         super().__init__(self.message)
 
 

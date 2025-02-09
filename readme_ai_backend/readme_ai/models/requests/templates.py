@@ -36,13 +36,3 @@ class TemplateUpdate(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
-
-
-class TemplateResponse(BaseModel):
-    id: int
-    content: str
-    user_id: Optional[str]
-    preview_url: Optional[str]
-
-    class Config:
-        from_attributes = True

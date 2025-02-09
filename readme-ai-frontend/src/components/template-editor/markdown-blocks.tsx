@@ -20,6 +20,11 @@ export const BLOCK_CONTENTS: Record<string, string> = {
   link: "REPLACE ME",
 };
 
+export interface BlockContent {
+  id: string;
+  content: string;
+}
+
 export const BLOCKS = [
   {
     id: "heading1",
