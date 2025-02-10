@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import CreateTemplates from "@/pages/create-templates";
+import CreateTemplate from "@/pages/create-template";
 
 export const Route = createFileRoute("/_home/templates/create/")({
-  component: CreateTemplates,
+  component: CreateTemplate,
 });

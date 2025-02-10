@@ -10,7 +10,7 @@ import { type BlockContent } from "@/components/template-editor/markdown-blocks"
 
 type EditorMode = "blocks" | "raw";
 
-function CreateTemplates() {
+function CreateTemplate() {
   const [mode, setMode] = useState<EditorMode>("blocks");
   const [blocks, setBlocks] = useState<BlockContent[]>([]);
 
@@ -43,6 +43,10 @@ function CreateTemplates() {
       }
     }
   };
+  const handleBlocksChange = (newBlocks: BlockContent[]) => {
+    setBlocks(newBlocks);
+    // Add any additional logic needed when blocks change
+  };
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -60,7 +64,7 @@ function CreateTemplates() {
           <BlockEditor
             onSave={handleSave}
             blocks={blocks}
-            setBlocks={setBlocks}
+            onBlocksChange={handleBlocksChange}
           />
         </TabsContent>
 
@@ -72,4 +76,4 @@ function CreateTemplates() {
   );
 }
 
-export default CreateTemplates;
+export default CreateTemplate;

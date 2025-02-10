@@ -1,4 +1,4 @@
-import { useState, type Dispatch, type SetStateAction } from "react";
+import { useState } from "react";
 import { type DragEndEvent, closestCenter } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import Sidebar from "./sidebar";
@@ -10,11 +10,11 @@ import { type BlockContent, BLOCKS } from "./markdown-blocks";
 function BlockEditor({
   onSave,
   blocks,
-  setBlocks,
+  onBlocksChange,
 }: {
   onSave: (markdown: string) => void;
   blocks: BlockContent[];
-  setBlocks: Dispatch<SetStateAction<BlockContent[]>>;
+  onBlocksChange: (blocks: BlockContent[]) => void;
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -27,10 +27,11 @@ function BlockEditor({
       const uniqueId = `${blockId}-${Date.now().toString()}`;
       const block = BLOCKS.find((b) => b.id === blockId);
 
-      setBlocks((items) => [
-        ...items,
+      onBlocksChange([
+        ...blocks,
         { id: uniqueId, content: block?.content || "" },
       ]);
+
       return;
     }
 
@@ -38,21 +39,20 @@ function BlockEditor({
     const overId = over.id.toString();
 
     if (activeId !== overId) {
-      setBlocks((items) => {
-        const oldIndex = items.findIndex((block) => block.id === activeId);
-        const newIndex = items.findIndex((block) => block.id === overId);
-        return arrayMove(items, oldIndex, newIndex);
-      });
+      const oldIndex = blocks.findIndex((block) => block.id === activeId);
+      const newIndex = blocks.findIndex((block) => block.id === overId);
+      onBlocksChange(arrayMove(blocks, oldIndex, newIndex));
     }
   };
 
   const handleBlockAdd = (id: string) => {
     const block = BLOCKS.find((b) => b.id === id);
     const uniqueId = `${id}-${Date.now().toString()}`;
-    setBlocks((items) => [
-      ...items,
+    onBlocksChange([
+      ...blocks,
       { id: uniqueId, content: block?.content || "" },
     ]);
+
     setIsSidebarOpen(false);
   };
 
@@ -79,7 +79,11 @@ function BlockEditor({
           >
             <Sidebar onBlockAdd={handleBlockAdd} />
           </div>
-          <Preview blocks={blocks} setBlocks={setBlocks} onSave={onSave} />
+          <Preview
+            blocks={blocks}
+            onBlocksChange={onBlocksChange}
+            onSave={onSave}
+          />
         </div>
       </div>
     </DndContext>

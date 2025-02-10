@@ -16,6 +16,7 @@ import { Route as IndexImport } from "./routes/index"
 import { Route as HomeHomeImport } from "./routes/_home/home"
 import { Route as HomeTemplatesIndexImport } from "./routes/_home/templates/index"
 import { Route as HomeTemplatesCreateIndexImport } from "./routes/_home/templates/create/index"
+import { Route as HomeTemplatesUpdateTemplateIdImport } from "./routes/_home/templates/update/$templateId"
 
 // Create/Update Routes
 
@@ -47,6 +48,13 @@ const HomeTemplatesCreateIndexRoute = HomeTemplatesCreateIndexImport.update({
   path: "/templates/create/",
   getParentRoute: () => HomeRoute,
 } as any)
+
+const HomeTemplatesUpdateTemplateIdRoute =
+  HomeTemplatesUpdateTemplateIdImport.update({
+    id: "/templates/update/$templateId",
+    path: "/templates/update/$templateId",
+    getParentRoute: () => HomeRoute,
+  } as any)
 
 // Populate the FileRoutesByPath interface
 
@@ -80,6 +88,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof HomeTemplatesIndexImport
       parentRoute: typeof HomeImport
     }
+    "/_home/templates/update/$templateId": {
+      id: "/_home/templates/update/$templateId"
+      path: "/templates/update/$templateId"
+      fullPath: "/templates/update/$templateId"
+      preLoaderRoute: typeof HomeTemplatesUpdateTemplateIdImport
+      parentRoute: typeof HomeImport
+    }
     "/_home/templates/create/": {
       id: "/_home/templates/create/"
       path: "/templates/create"
@@ -95,12 +110,14 @@ declare module "@tanstack/react-router" {
 interface HomeRouteChildren {
   HomeHomeRoute: typeof HomeHomeRoute
   HomeTemplatesIndexRoute: typeof HomeTemplatesIndexRoute
+  HomeTemplatesUpdateTemplateIdRoute: typeof HomeTemplatesUpdateTemplateIdRoute
   HomeTemplatesCreateIndexRoute: typeof HomeTemplatesCreateIndexRoute
 }
 
 const HomeRouteChildren: HomeRouteChildren = {
   HomeHomeRoute: HomeHomeRoute,
   HomeTemplatesIndexRoute: HomeTemplatesIndexRoute,
+  HomeTemplatesUpdateTemplateIdRoute: HomeTemplatesUpdateTemplateIdRoute,
   HomeTemplatesCreateIndexRoute: HomeTemplatesCreateIndexRoute,
 }
 
@@ -111,6 +128,7 @@ export interface FileRoutesByFullPath {
   "": typeof HomeRouteWithChildren
   "/home": typeof HomeHomeRoute
   "/templates": typeof HomeTemplatesIndexRoute
+  "/templates/update/$templateId": typeof HomeTemplatesUpdateTemplateIdRoute
   "/templates/create": typeof HomeTemplatesCreateIndexRoute
 }
 
@@ -119,6 +137,7 @@ export interface FileRoutesByTo {
   "": typeof HomeRouteWithChildren
   "/home": typeof HomeHomeRoute
   "/templates": typeof HomeTemplatesIndexRoute
+  "/templates/update/$templateId": typeof HomeTemplatesUpdateTemplateIdRoute
   "/templates/create": typeof HomeTemplatesCreateIndexRoute
 }
 
@@ -128,20 +147,34 @@ export interface FileRoutesById {
   "/_home": typeof HomeRouteWithChildren
   "/_home/home": typeof HomeHomeRoute
   "/_home/templates/": typeof HomeTemplatesIndexRoute
+  "/_home/templates/update/$templateId": typeof HomeTemplatesUpdateTemplateIdRoute
   "/_home/templates/create/": typeof HomeTemplatesCreateIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/" | "" | "/home" | "/templates" | "/templates/create"
+  fullPaths:
+    | "/"
+    | ""
+    | "/home"
+    | "/templates"
+    | "/templates/update/$templateId"
+    | "/templates/create"
   fileRoutesByTo: FileRoutesByTo
-  to: "/" | "" | "/home" | "/templates" | "/templates/create"
+  to:
+    | "/"
+    | ""
+    | "/home"
+    | "/templates"
+    | "/templates/update/$templateId"
+    | "/templates/create"
   id:
     | "__root__"
     | "/"
     | "/_home"
     | "/_home/home"
     | "/_home/templates/"
+    | "/_home/templates/update/$templateId"
     | "/_home/templates/create/"
   fileRoutesById: FileRoutesById
 }
@@ -178,6 +211,7 @@ export const routeTree = rootRoute
       "children": [
         "/_home/home",
         "/_home/templates/",
+        "/_home/templates/update/$templateId",
         "/_home/templates/create/"
       ]
     },
@@ -187,6 +221,10 @@ export const routeTree = rootRoute
     },
     "/_home/templates/": {
       "filePath": "_home/templates/index.tsx",
+      "parent": "/_home"
+    },
+    "/_home/templates/update/$templateId": {
+      "filePath": "_home/templates/update/$templateId.tsx",
       "parent": "/_home"
     },
     "/_home/templates/create/": {

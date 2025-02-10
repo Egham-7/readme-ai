@@ -20,7 +20,8 @@ import { type BlockContent } from "./markdown-blocks";
 
 interface PreviewProps {
   blocks: BlockContent[];
-  setBlocks: (blocks: BlockContent[]) => void;
+  onBlocksChange: (blocks: BlockContent[]) => void;
+
   onSave: (markdown: string) => void;
 }
 
@@ -240,17 +241,21 @@ const PreviewDialog = ({
   </Dialog>
 );
 
-export default function Preview({ blocks, setBlocks, onSave }: PreviewProps) {
+export default function Preview({
+  blocks,
+  onBlocksChange,
+  onSave,
+}: PreviewProps) {
   const { setNodeRef, isOver } = useDroppable({ id: "preview" });
   const [showFullPreview, setShowFullPreview] = useState(false);
   const { toast } = useToast();
 
   const handleRemoveBlock = (id: string) => {
-    setBlocks(blocks.filter((block) => block.id !== id));
+    onBlocksChange(blocks.filter((block) => block.id !== id));
   };
 
   const updateBlockContent = (id: string, content: string) => {
-    setBlocks(
+    onBlocksChange(
       blocks.map((block) => (block.id === id ? { ...block, content } : block)),
     );
   };
