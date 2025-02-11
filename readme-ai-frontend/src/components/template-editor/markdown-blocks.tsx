@@ -20,6 +20,11 @@ export const BLOCK_CONTENTS: Record<string, string> = {
   link: "REPLACE ME",
 };
 
+export interface BlockContent {
+  id: string;
+  content: string;
+}
+
 export const BLOCKS = [
   {
     id: "heading1",
@@ -89,3 +94,77 @@ export const BLOCKS = [
 export const CATEGORIES = Array.from(
   new Set(BLOCKS.map((block) => block.category)),
 );
+
+export const parseMarkdownToBlocks = (markdown: string): BlockContent[] => {
+  const lines = markdown.split("\n\n").filter(Boolean);
+
+  return lines.map((content) => {
+    // Match content with block types
+    const matchBlock = BLOCKS.find((block) => {
+      switch (block.id) {
+        case "heading1":
+          return content.startsWith("# ");
+        case "heading2":
+          return content.startsWith("## ");
+        case "heading3":
+          return content.startsWith("### ");
+        case "unordered_list":
+          return content.split("\n").every((line) => line.startsWith("- "));
+        case "ordered_list":
+          return content.split("\n").every((line) => /^\d+\.\s/.test(line));
+        case "blockquote":
+          return content.split("\n").every((line) => line.startsWith("> "));
+        case "code":
+          return content.startsWith("```") && content.endsWith("```");
+        case "image":
+          return content.startsWith("![");
+        case "link":
+          return content.startsWith("[");
+        default:
+          return false;
+      }
+    });
+
+    // Clean content based on block type
+    const cleanContent = matchBlock
+      ? (() => {
+          switch (matchBlock.id) {
+            case "heading1":
+              return content.replace(/^#\s/, "");
+            case "heading2":
+              return content.replace(/^##\s/, "");
+            case "heading3":
+              return content.replace(/^###\s/, "");
+            case "unordered_list":
+              return content
+                .split("\n")
+                .map((line) => line.replace(/^-\s/, ""))
+                .join("\n");
+            case "ordered_list":
+              return content
+                .split("\n")
+                .map((line) => line.replace(/^\d+\.\s/, ""))
+                .join("\n");
+            case "blockquote":
+              return content
+                .split("\n")
+                .map((line) => line.replace(/^>\s/, ""))
+                .join("\n");
+            case "code":
+              return content.replace(/^```\n/, "").replace(/\n```$/, "");
+            case "image":
+              return content.match(/!\[(.*?)\]/)?.[1] || "";
+            case "link":
+              return content.match(/\[(.*?)\]/)?.[1] || "";
+            default:
+              return content;
+          }
+        })()
+      : content;
+
+    return {
+      id: `${matchBlock?.id || "paragraph"}-${Date.now()}`,
+      content: cleanContent,
+    };
+  });
+};

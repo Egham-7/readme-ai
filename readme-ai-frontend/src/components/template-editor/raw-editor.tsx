@@ -3,8 +3,14 @@ import { useState } from "react";
 import { Textarea } from "../ui/textarea";
 import MarkdownPreview from "../markdown-preview";
 
-function RawEditor({ onSave }: { onSave: (markdown: string) => void }) {
-  const [rawMarkdown, setRawMarkdown] = useState("");
+function RawEditor({
+  onSave,
+  markdown,
+}: {
+  onSave: (markdown: string) => void;
+  markdown?: string;
+}) {
+  const [rawMarkdown, setRawMarkdown] = useState(markdown ?? "");
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
 
   return (

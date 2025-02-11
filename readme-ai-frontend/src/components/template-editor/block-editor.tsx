@@ -5,9 +5,17 @@ import Sidebar from "./sidebar";
 import { Button } from "../ui/button";
 import { DndContext } from "@dnd-kit/core";
 import Preview from "./preview";
+import { type BlockContent, BLOCKS } from "./markdown-blocks";
 
-function BlockEditor({ onSave }: { onSave: (markdown: string) => void }) {
-  const [blocks, setBlocks] = useState<string[]>([]);
+function BlockEditor({
+  onSave,
+  blocks,
+  onBlocksChange,
+}: {
+  onSave: (markdown: string) => void;
+  blocks: BlockContent[];
+  onBlocksChange: (blocks: BlockContent[]) => void;
+}) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -17,7 +25,13 @@ function BlockEditor({ onSave }: { onSave: (markdown: string) => void }) {
     if (over.id === "preview") {
       const blockId = active.id.toString().split("-")[1];
       const uniqueId = `${blockId}-${Date.now().toString()}`;
-      setBlocks((items) => [...items, uniqueId]);
+      const block = BLOCKS.find((b) => b.id === blockId);
+
+      onBlocksChange([
+        ...blocks,
+        { id: uniqueId, content: block?.content || "" },
+      ]);
+
       return;
     }
 
@@ -25,17 +39,21 @@ function BlockEditor({ onSave }: { onSave: (markdown: string) => void }) {
     const overId = over.id.toString();
 
     if (activeId !== overId) {
-      setBlocks((items) => {
-        const oldIndex = items.indexOf(activeId);
-        const newIndex = items.indexOf(overId);
-        return arrayMove(items, oldIndex, newIndex);
-      });
+      const oldIndex = blocks.findIndex((block) => block.id === activeId);
+      const newIndex = blocks.findIndex((block) => block.id === overId);
+      onBlocksChange(arrayMove(blocks, oldIndex, newIndex));
     }
   };
 
   const handleBlockAdd = (id: string) => {
-    setBlocks((items) => [...items, id]);
-    setIsSidebarOpen(false); // Close sidebar after adding block on mobile
+    const block = BLOCKS.find((b) => b.id === id);
+    const uniqueId = `${id}-${Date.now().toString()}`;
+    onBlocksChange([
+      ...blocks,
+      { id: uniqueId, content: block?.content || "" },
+    ]);
+
+    setIsSidebarOpen(false);
   };
 
   return (
@@ -61,7 +79,11 @@ function BlockEditor({ onSave }: { onSave: (markdown: string) => void }) {
           >
             <Sidebar onBlockAdd={handleBlockAdd} />
           </div>
-          <Preview blocks={blocks} setBlocks={setBlocks} onSave={onSave} />
+          <Preview
+            blocks={blocks}
+            onBlocksChange={onBlocksChange}
+            onSave={onSave}
+          />
         </div>
       </div>
     </DndContext>

@@ -4,7 +4,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { BLOCKS } from "./markdown-blocks";
 import { TrashIcon } from "lucide-react";
 import { Button } from "../ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MarkdownPreview from "../markdown-preview";
 import {
   Dialog,
@@ -16,16 +16,13 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "../ui/textarea";
+import { type BlockContent } from "./markdown-blocks";
 
 interface PreviewProps {
-  blocks: string[];
-  setBlocks: (blocks: string[]) => void;
-  onSave: (markdown: string) => void;
-}
+  blocks: BlockContent[];
+  onBlocksChange: (blocks: BlockContent[]) => void;
 
-interface BlockContent {
-  id: string;
-  content: string;
+  onSave: (markdown: string) => void;
 }
 
 interface SortableBlockProps {
@@ -119,6 +116,12 @@ function SortableBlock({
   const block = BLOCKS.find((b) => b.id === baseBlockId);
   const [rawContent, setRawContent] = useState(initialContent || "");
   const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    if (initialContent) {
+      onContentUpdate(id, formatBlockContent(block?.id || "", initialContent));
+    }
+  });
 
   if (!block) return null;
 
@@ -238,34 +241,28 @@ const PreviewDialog = ({
   </Dialog>
 );
 
-export default function Preview({ blocks, setBlocks, onSave }: PreviewProps) {
+export default function Preview({
+  blocks,
+  onBlocksChange,
+  onSave,
+}: PreviewProps) {
   const { setNodeRef, isOver } = useDroppable({ id: "preview" });
   const [showFullPreview, setShowFullPreview] = useState(false);
-  const [blockContents, setBlockContents] = useState<BlockContent[]>([]);
   const { toast } = useToast();
 
   const handleRemoveBlock = (id: string) => {
-    setBlocks(blocks.filter((blockId) => blockId !== id));
-    setBlockContents(blockContents.filter((block) => block.id !== id));
+    onBlocksChange(blocks.filter((block) => block.id !== id));
   };
 
   const updateBlockContent = (id: string, content: string) => {
-    setBlockContents((prev) => {
-      const existing = prev.find((block) => block.id === id);
-      if (existing) {
-        return prev.map((block) =>
-          block.id === id ? { ...block, content } : block,
-        );
-      }
-      return [...prev, { id, content }];
-    });
+    onBlocksChange(
+      blocks.map((block) => (block.id === id ? { ...block, content } : block)),
+    );
   };
 
   const getAllMarkdownContent = () =>
     blocks
-      .map(
-        (id) => blockContents.find((block) => block.id === id)?.content || "",
-      )
+      .map((block) => block.content)
       .filter(Boolean)
       .join("\n\n");
 
@@ -326,15 +323,15 @@ export default function Preview({ blocks, setBlocks, onSave }: PreviewProps) {
           <ScrollArea className="h-[calc(100vh-8rem)] lg:h-[calc(100vh-12rem)]">
             <SortableContext items={blocks}>
               <div className="p-3 lg:p-4">
-                {blocks.map((id) => {
-                  const [baseBlockId] = id.split("-");
+                {blocks.map((block) => {
+                  const [baseBlockId] = block.id.split("-");
                   const initialBlock = BLOCKS.find(
                     (block) => block.id === baseBlockId,
                   );
                   return (
                     <SortableBlock
-                      key={id}
-                      id={id}
+                      key={block.id}
+                      id={block.id}
                       onRemove={handleRemoveBlock}
                       onContentUpdate={updateBlockContent}
                       initialContent={initialBlock?.content || ""}

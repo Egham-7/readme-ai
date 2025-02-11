@@ -32,21 +32,24 @@ export interface ApiSuccessResponse {
 export interface Template {
   id: number;
   content: string;
-  user_id: string;
   preview_url?: string;
-  created_at: string;
-  updated_at: string;
+  featured: boolean;
+  user_id: string;
 }
 
 export interface CreateTemplatePayload {
   content: string;
-  user_id: string;
   preview_file?: File;
 }
 
 export interface UpdateTemplatePayload {
   content?: string;
   preview_file?: File;
+}
+
+export interface TemplatesResponse {
+  data: Template[];
+  total_pages: number;
 }
 
 export class ApiError extends Error {
@@ -88,11 +91,15 @@ export const getErrorAction = (error: ApiError): string => {
 };
 
 export const readmeService = {
-  generateReadme: async (params: RepoRequestParams): Promise<string> => {
+  generateReadme: async (
+    params: RepoRequestParams,
+    token: string,
+  ): Promise<string> => {
     const response = await fetch(`${API_BASE_URL}/generate-readme`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(params),
     });
@@ -131,8 +138,19 @@ export const readmeService = {
     return response.json() as Promise<HealthCheckResponse>;
   },
 
-  getAllTemplates: async (): Promise<Template[]> => {
-    const response = await fetch(`${API_BASE_URL}/templates/`);
+  getAllTemplates: async (
+    token: string,
+    page: number,
+    pageSize: number,
+  ): Promise<TemplatesResponse> => {
+    const response = await fetch(
+      `${API_BASE_URL}/templates/?page=${page}&page_size=${pageSize}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
 
     if (!response.ok) {
       const errorData = (await response.json()) as ApiErrorResponse;
@@ -147,9 +165,12 @@ export const readmeService = {
     return response.json();
   },
 
-  // Get single template
-  getTemplate: async (id: number): Promise<Template> => {
-    const response = await fetch(`${API_BASE_URL}/templates/${id}`);
+  getTemplate: async (id: number, token: string): Promise<Template> => {
+    const response = await fetch(`${API_BASE_URL}/templates/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
     if (!response.ok) {
       const errorData = (await response.json()) as ApiErrorResponse;
@@ -164,17 +185,21 @@ export const readmeService = {
     return response.json();
   },
 
-  // Create template
-  createTemplate: async (payload: CreateTemplatePayload): Promise<Template> => {
+  createTemplate: async (
+    payload: CreateTemplatePayload,
+    token: string,
+  ): Promise<Template> => {
     const formData = new FormData();
     formData.append("content", payload.content);
-    formData.append("user_id", payload.user_id);
     if (payload.preview_file) {
       formData.append("preview_file", payload.preview_file);
     }
 
     const response = await fetch(`${API_BASE_URL}/templates/`, {
       method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
       body: formData,
     });
 
@@ -191,10 +216,10 @@ export const readmeService = {
     return response.json();
   },
 
-  // Update template
   updateTemplate: async (
     id: number,
     payload: UpdateTemplatePayload,
+    token: string,
   ): Promise<Template> => {
     const formData = new FormData();
     if (payload.content) {
@@ -206,6 +231,9 @@ export const readmeService = {
 
     const response = await fetch(`${API_BASE_URL}/templates/${id}`, {
       method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
       body: formData,
     });
 
@@ -222,10 +250,12 @@ export const readmeService = {
     return response.json();
   },
 
-  // Delete template
-  deleteTemplate: async (id: number): Promise<void> => {
+  deleteTemplate: async (id: number, token: string): Promise<void> => {
     const response = await fetch(`${API_BASE_URL}/templates/${id}`, {
       method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (!response.ok) {
@@ -237,6 +267,34 @@ export const readmeService = {
         errorData.timestamp,
       );
     }
+  },
+
+  getUserTemplates: async (
+    userId: string,
+    token: string,
+    page: number,
+    pageSize: number,
+  ): Promise<TemplatesResponse> => {
+    const response = await fetch(
+      `${API_BASE_URL}/templates/user/${userId}?page=${page}&page_size=${pageSize}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as ApiErrorResponse;
+      throw new ApiError(
+        errorData.message,
+        errorData.error_code,
+        errorData.details,
+        errorData.timestamp,
+      );
+    }
+
+    return response.json();
   },
 };
 

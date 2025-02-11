@@ -74,8 +74,7 @@ export default function Sidebar({ onBlockAdd }: SidebarProps) {
   const { setNodeRef } = useDroppable({ id: "sidebar" });
 
   const handleBlockSelect = (blockId: string) => {
-    const uniqueId = `${blockId}-${Date.now().toString()}`;
-    onBlockAdd(uniqueId);
+    onBlockAdd(blockId);
   };
 
   return (

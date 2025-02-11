@@ -10,9 +10,10 @@ config = context.config
 settings = get_settings()
 db_url = settings.DATABASE_URL
 
-print(f"DB URL: {db_url}")
-
-config.set_main_option("sqlalchemy.url", db_url)
+# Need to use synchronous url for migrations
+config.set_main_option(
+    "sqlalchemy.url", str(db_url).replace("postgresql+asyncpg", "postgresql")
+)
 
 
 if config.config_file_name is not None:
