@@ -65,7 +65,6 @@ function EditTemplate() {
 
   const handleBlocksChange = (newBlocks: BlockContent[]) => {
     setBlocks(newBlocks);
-    // Add any additional logic needed when blocks change
   };
 
   if (isLoading) {

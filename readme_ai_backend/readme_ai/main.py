@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 from datetime import datetime
 from fastapi import (
     FastAPI,
@@ -13,6 +13,7 @@ from fastapi import (
 from fastapi.middleware.cors import CORSMiddleware
 from readme_ai.agents.repo_analyzer import RepoAnalyzerAgent
 from readme_ai.agents.readme_agent import ReadmeCompilerAgent
+from readme_ai.models.template import Template
 from readme_ai.settings import get_settings, MissingEnvironmentVariable
 from dotenv import load_dotenv
 from hypercorn.config import Config
@@ -23,9 +24,6 @@ from contextlib import asynccontextmanager
 from readme_ai.repositories.template_repository import TemplateRepository
 from readme_ai.services.template_service import TemplateService
 from readme_ai.services.miniio_service import MinioService, get_minio_service
-from readme_ai.models.requests.templates import (
-    TemplateUpdate,
-)
 from readme_ai.models.responses.template import TemplatesResponse, TemplateResponse
 from readme_ai.logging_config import logger
 from readme_ai.database import get_db
@@ -287,7 +285,10 @@ async def get_template(
         if template.user_id != user.get_user_id():
             raise AuthenticationError("Not allowed to view this template.")
 
-        return template
+        template_dict = template.to_dict()
+
+        return TemplateResponse(**template_dict)
+
     except HTTPException as he:
         raise he
 
@@ -393,10 +394,11 @@ async def get_all_templates(
 async def update_template(
     request: Request,
     template_id: int,
-    template_req: TemplateUpdate,
+    content: str = Form(...),
+    preview_file: UploadFile = Form(None),
     db: AsyncSession = Depends(get_db),
     minio_service: MinioService = Depends(get_minio_service),
-):
+) -> Union[TemplateResponse, JSONResponse]:
     timestamp = datetime.now().isoformat()
     user: ClerkUser = request.state.user
 
@@ -412,16 +414,15 @@ async def update_template(
         if template.user_id != user.get_user_id():
             raise AuthenticationError("Not allowed to update this template.")
 
-        preview_image_bytes = (
-            await template_req.preview_file.read()
-            if template_req.preview_file
-            else None
-        )
-        updated_template = service.update_template(
-            template_id, template_req.content, preview_image=preview_image_bytes
+        preview_image_bytes = await preview_file.read() if preview_file else None
+        updated_template: Template = await service.update_template(
+            template_id, content, preview_image=preview_image_bytes
         )
 
-        return updated_template
+        template_dict = updated_template.to_dict()
+
+        return TemplateResponse(**template_dict)
+
     except HTTPException as he:
         raise he
 

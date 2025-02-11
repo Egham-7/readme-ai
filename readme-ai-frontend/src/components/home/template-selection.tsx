@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -10,7 +9,6 @@ import {
 import {
   Drawer,
   DrawerContent,
-  DrawerDescription,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
@@ -28,13 +26,21 @@ import {
 import { useDevice } from "@/hooks/use-device";
 import { useTemplates, useUserTemplates } from "@/hooks/readme/use-templates";
 import MarkdownPreview from "../markdown-preview";
-import { forwardRef } from "react";
 import { Link } from "@tanstack/react-router";
 import { ApiError, type Template } from "@/services/readme";
 import { useState } from "react";
 import ErrorDisplay from "./error-display";
 import { useToast } from "@/hooks/use-toast";
 import { useDeleteTemplate } from "@/hooks/readme/use-templates";
+import {
+  Card,
+  CardTitle,
+  CardFooter,
+  CardContent,
+  CardHeader,
+} from "../ui/card";
+import { TrashIcon, PencilIcon, EyeIcon } from "lucide-react";
+import { useUser } from "@clerk/clerk-react";
 
 const TemplateSkeleton = () => (
   <div className="w-full h-20 md:h-24 rounded-lg bg-muted animate-pulse" />
@@ -98,8 +104,8 @@ const DeleteTemplateModal = ({
   };
 
   const trigger = (
-    <Button variant="destructive" className="w-auto">
-      Delete
+    <Button variant="outline" size="icon">
+      <TrashIcon className="h-4 w-4" />
     </Button>
   );
 
@@ -110,7 +116,9 @@ const DeleteTemplateModal = ({
         cannot be undone.
       </p>
       <div className="flex gap-2 justify-end">
-        <Button variant="outline">Cancel</Button>
+        <Button variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
         <Button
           variant="destructive"
           onClick={handleDelete}
@@ -157,108 +165,94 @@ const TemplateCard = ({
   onSelect: (templateId: number) => void;
 }) => {
   const { isMobile } = useDevice();
-
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
+  const user = useUser().user;
+  const userId = user?.id;
+  const templateUserId = template.user_id;
+
   const previewContent = (
-    <div className="flex flex-col h-full">
-      <Tabs
-        defaultValue="preview"
-        className="w-full bg-muted/50 p-2 md:p-4 rounded-lg flex-1"
-      >
-        <TabsList className="grid w-full grid-cols-2 bg-background">
-          <TabsTrigger value="preview" className="text-sm md:text-base">
-            Preview
-          </TabsTrigger>
-          <TabsTrigger value="code" className="text-sm md:text-base">
-            Markdown
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="preview" className="mt-2 md:mt-4">
-          <div className="prose prose-sm dark:prose-invert max-w-none bg-background border rounded-md p-2 md:p-4 h-[40vh] md:h-[50vh] overflow-y-auto">
-            <MarkdownPreview content={template.content} />
-          </div>
-        </TabsContent>
-        <TabsContent value="code" className="mt-2 md:mt-4">
-          <Textarea
-            value={template.content}
-            readOnly
-            className="w-full h-[40vh] md:h-[50vh] font-mono text-xs md:text-sm bg-background"
-          />
-        </TabsContent>
-      </Tabs>
-      <div className="mt-4 flex gap-2">
-        <Button onClick={() => onSelect(template.id)} className="flex-1">
+    <Card className="flex flex-col h-full w-full">
+      <CardHeader>
+        <CardTitle className="text-xl font-semibold">{template.id}</CardTitle>
+      </CardHeader>
+      <CardContent className="flex-1">
+        <Tabs defaultValue="preview" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="preview">Preview</TabsTrigger>
+            <TabsTrigger value="code">Markdown</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="preview" className="mt-4">
+            <div className="prose prose-sm dark:prose-invert max-w-none bg-card border rounded-lg p-4 h-[40vh] md:h-[50vh] overflow-y-auto">
+              <MarkdownPreview content={template.content} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="code" className="mt-4">
+            <Textarea
+              value={template.content}
+              readOnly
+              className="w-full h-[40vh] md:h-[50vh] font-mono text-sm bg-card"
+            />
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+
+      <CardFooter className="gap-2">
+        <Button
+          onClick={() => onSelect(template.id)}
+          className="flex-1"
+          variant="default"
+        >
           Use Template
         </Button>
-        <DeleteTemplateModal
-          onClose={() => {
-            setIsPreviewOpen(false);
-          }}
-          template={template}
-        />
-      </div>
-    </div>
-  );
 
-  const PreviewTrigger = forwardRef<
-    HTMLButtonElement,
-    { onClick?: () => void }
-  >(({ onClick }, ref) => (
-    <Button
-      ref={ref}
-      variant="outline"
-      className="w-full h-20 md:h-24 flex flex-col items-center justify-center hover:bg-accent hover:text-accent-foreground"
-      onClick={onClick}
-      type="button"
-    >
-      <span className="font-bold text-sm md:text-base">
-        Template {template.id}
-      </span>
-      <span className="text-xs md:text-sm text-muted-foreground">
-        Preview template
-      </span>
-    </Button>
-  ));
-  PreviewTrigger.displayName = "PreviewTrigger";
+        {userId === templateUserId && (
+          <>
+            <Link
+              to="/templates/update/$templateId"
+              params={{ templateId: template.id.toString() }}
+            >
+              <Button variant="outline" size="icon">
+                <PencilIcon className="h-4 w-4" />
+              </Button>
+            </Link>
+
+            <DeleteTemplateModal
+              onClose={() => setIsPreviewOpen(false)}
+              template={template}
+            ></DeleteTemplateModal>
+          </>
+        )}
+      </CardFooter>
+    </Card>
+  );
 
   if (isMobile) {
     return (
-      <Drawer open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DrawerTrigger asChild>
-          <PreviewTrigger />
-        </DrawerTrigger>
-        <DrawerContent className="bg-background">
-          <DrawerHeader className="bg-muted/30 p-3 md:p-4">
-            <DrawerTitle className="text-base md:text-lg">
-              Template {template.id}
-            </DrawerTitle>
-            <DrawerDescription className="text-sm">
-              Preview and use this template
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="p-3 md:p-4 flex-1 overflow-y-auto">
-            {previewContent}
-          </div>
-        </DrawerContent>
-      </Drawer>
+      <Card className="group hover:border-primary/50 transition-colors">
+        <CardHeader>
+          <CardTitle className="text-lg">{template.id}</CardTitle>
+        </CardHeader>
+        <CardFooter className="gap-2">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => setIsPreviewOpen(true)}
+          >
+            <EyeIcon className="h-4 w-4 mr-2" />
+            Preview
+          </Button>
+          <Button onClick={() => onSelect(template.id)}>Use</Button>
+        </CardFooter>
+
+        {isPreviewOpen && previewContent}
+      </Card>
     );
   }
 
-  return (
-    <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-      <DialogTrigger asChild>
-        <PreviewTrigger />
-      </DialogTrigger>
-      <DialogContent className="max-w-3xl overflow-hidden bg-background">
-        <DialogHeader className="bg-muted/30 p-4 rounded-t-lg">
-          <DialogTitle className="text-lg">Template {template.id}</DialogTitle>
-          <DialogDescription>Preview and use this template</DialogDescription>
-        </DialogHeader>
-        <div className="p-4">{previewContent}</div>
-      </DialogContent>
-    </Dialog>
-  );
+  return previewContent;
 };
 
 const TemplateGrid = ({

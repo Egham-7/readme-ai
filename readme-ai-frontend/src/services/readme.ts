@@ -33,8 +33,8 @@ export interface Template {
   id: number;
   content: string;
   preview_url?: string;
-  created_at: string;
-  updated_at: string;
+  featured: boolean;
+  user_id: string;
 }
 
 export interface CreateTemplatePayload {

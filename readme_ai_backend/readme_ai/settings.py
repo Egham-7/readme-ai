@@ -8,8 +8,7 @@ class MissingEnvironmentVariable(Exception):
     """Exception raised when a required environment variable is missing"""
 
     def __init__(self, variable_name: str):
-        self.message = f"Critical environment variable {
-            variable_name} is missing"
+        self.message = f"Critical environment variable {variable_name} is missing"
         super().__init__(self.message)
 
 
@@ -27,10 +26,6 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     WORKERS: int = 4
-
-    # Repository Settings
-    TEMP_DIR: str = "temp_repos"
-    MAX_REPO_SIZE: int = 100_000_000  # 100MB
 
     # Model Settings
     MODEL_NAME: str = "mixtral-8x7b-32768"

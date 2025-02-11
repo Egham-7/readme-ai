@@ -98,7 +98,7 @@ export const CATEGORIES = Array.from(
 export const parseMarkdownToBlocks = (markdown: string): BlockContent[] => {
   const lines = markdown.split("\n\n").filter(Boolean);
 
-  return lines.map((content, index) => {
+  return lines.map((content) => {
     // Match content with block types
     const matchBlock = BLOCKS.find((block) => {
       switch (block.id) {
@@ -163,7 +163,7 @@ export const parseMarkdownToBlocks = (markdown: string): BlockContent[] => {
       : content;
 
     return {
-      id: `${matchBlock?.id || "paragraph"}-${Date.now()}-${index}`,
+      id: `${matchBlock?.id || "paragraph"}-${Date.now()}`,
       content: cleanContent,
     };
   });
