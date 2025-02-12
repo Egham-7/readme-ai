@@ -1,32 +1,42 @@
+# Standard library imports
 from urllib.parse import urlparse
+import logging
+import asyncio
+from functools import lru_cache
+
+# Third-party imports
 from github.ContentFile import ContentFile  # type:ignore
 from github import Github, UnknownObjectException  # type: ignore
 from typing import List, Optional, Dict, Any, TypedDict, Annotated, cast
 from langgraph.graph import StateGraph, START, END  # type: ignore
 from langchain_groq import ChatGroq  # type: ignore
-
 from pydantic import BaseModel, Field  # type:ignore
-import logging
-import asyncio  # type:ignore
 from aiohttp import ClientSession  # type:ignore
-from functools import lru_cache
-from readme_ai.prompts import choose_file_prompt, binary_extensions, analyse_file_prompt,gitignore_by_language
+
+# Local imports
+from readme_ai.prompts import (
+    choose_file_prompt,
+    binary_extensions,
+    analyse_file_prompt,
+    gitignore_by_language
+)
 
 logger = logging.getLogger(__name__)
 
 
 class ImportantFiles(BaseModel):
+    """Model for storing important repository file paths"""
     files: List[str] = Field(description="List of important repository file paths")
 
 
 class FileAnalysis(BaseModel):
+    """Model for storing file analysis results"""
     path: str = Field(description="Path of the analyzed file")
-    analysis: str = Field(
-        description="Detailed analysis of the file's purpose and functionality"
-    )
+    analysis: str = Field(description="Detailed analysis of the file's purpose and functionality")
 
 
 class RepoAnalyzerState(TypedDict):
+    """Type definition for the analyzer state"""
     messages: Annotated[List[Dict[str, str]], "Messages for the analysis"]
     analysis: List[Dict[str, str]]
     important_files: List[str]
@@ -35,13 +45,16 @@ class RepoAnalyzerState(TypedDict):
 
 
 class AnalysisError(Exception):
+    """Custom exception for analysis errors"""
     def __init__(self, message: str, details: Optional[Dict] = None):
         self.message = message
         self.details = details or {}
         super().__init__(self.message)
 
 
+
 class RepoAnalyzerAgent:
+    """Main class for analyzing GitHub repositories"""
     def __init__(self, github_token: str):
         logger.info("Initializing RepoAnalyzerAgent")
         self.github_token = github_token
@@ -89,7 +102,7 @@ class RepoAnalyzerAgent:
             logger.info(f"Selected Important Files: {files}")
             return {**state, "important_files": files}
         except Exception as e:
-            raise AnalysisError(
+            raise AnalysisError( 
                 "Failed to choose important files",
                 {
                     "step": "choose_files",
@@ -99,14 +112,21 @@ class RepoAnalyzerAgent:
             )
 
     @lru_cache(maxsize=128)
-    def _is_ignore_file(self, file_path: str, repo_url:str) -> bool:
-        binary_extensions1 = binary_extensions
-        repo_metadata = self.get_github_repo_metadata(repo_url,self.github_token)
-        specific_extensions = gitignore_by_language[repo_metadata["language"]]
-
+    async def _is_ignore_file(self, file_path: str, repo_url: str) -> bool:
+        # These file extensions should always be analyzed
+        always_analyze = {'.yml', '.yaml', '.py', '.json', '.sh', '.md', '.txt'}
+        
         extension = "." + file_path.split(".")[-1].lower() if "." in file_path else ""
-
-        return extension in (binary_extensions1 or specific_extensions)
+        
+        # If it's in our always analyze list, return False
+        if extension in always_analyze:
+            return False
+            
+        # Otherwise check against binary and language-specific extensions
+        repo_metadata = await self.get_github_repo_metadata(repo_url, self.github_token)
+        specific_extensions = gitignore_by_language.get(repo_metadata["language"], set())
+        
+        return extension in binary_extensions or extension in specific_extensions
 
     
    
@@ -116,7 +136,7 @@ class RepoAnalyzerAgent:
     ) -> List[Dict[str, str]]:
         async def analyze_single_file(file_path: str, content: str) -> Dict[str, str]:
             try:
-                if self._is_ignore_file(repo_url, file_path):
+                if await self._is_ignore_file(file_path, repo_url):
                     return {
                         "path": file_path,
                         "analysis": "Binary file - analysis skipped",
