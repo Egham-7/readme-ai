@@ -5,7 +5,7 @@ export default function ProductPreview() {
         <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-accent/10 to-transparent" />
         <img
           src="/hero.jpeg"
-          alt="GitScribe AI Documentation Interface"
+          alt="ReadYou AI Documentation Interface"
           className="w-full h-auto"
         />
       </div>

@@ -21,21 +21,21 @@ export default function Hero() {
           </h1>
 
           <p className="max-w-2xl mx-auto text-xl sm:text-2xl text-muted-foreground mb-12 leading-relaxed">
-            GitScribe uses advanced AI to analyze your repository and create
+            ReadYou uses advanced AI to analyze your repository and create
             beautiful, comprehensive documentation that truly represents your
             project.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button
-              className="relative group px-8 py-6 text-lg rounded-full bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_200%] bg-left hover:bg-right transition-all duration-500"
-              size="lg"
-            >
-              <Link className="relative z-10" to="/home">
+            <Link className="relative z-10" to="/home">
+              <Button
+                className="relative group px-8 py-6 text-lg rounded-full bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_200%] bg-left hover:bg-right transition-all duration-500"
+                size="lg"
+              >
                 Generate Your First README
-              </Link>
-              <div className="absolute inset-0 rounded-full bg-white/20 blur-xl group-hover:blur-2xl transition-all duration-300 opacity-0 group-hover:opacity-100" />
-            </Button>
+                <div className="absolute inset-0 rounded-full bg-white/20 blur-xl group-hover:blur-2xl transition-all duration-300 opacity-0 group-hover:opacity-100" />
+              </Button>
+            </Link>
           </div>
         </motion.div>
 

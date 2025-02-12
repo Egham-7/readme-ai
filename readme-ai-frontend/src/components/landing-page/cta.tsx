@@ -8,7 +8,7 @@ export default function CTA() {
           Transform Your Repository Documentation
         </h2>
         <p className="text-xl mb-8 max-w-2xl mx-auto">
-          Let GitScribe's AI craft the perfect README for your projects in
+          Let ReadYou's AI craft the perfect README for your projects in
           seconds.
         </p>
         <Button size="lg" variant="secondary">

@@ -79,7 +79,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <path d={Github.path} />
             </svg>
-            GitScribe
+            ReadYou
           </Link>
         </div>
       </SidebarHeader>

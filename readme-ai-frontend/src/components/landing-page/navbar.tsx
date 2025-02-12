@@ -19,7 +19,7 @@ export default function Navbar() {
               to="/"
               className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
             >
-              GitScribe
+              ReadYou
             </Link>
             <div className="hidden md:block ml-10">
               <div className="flex items-center space-x-8">

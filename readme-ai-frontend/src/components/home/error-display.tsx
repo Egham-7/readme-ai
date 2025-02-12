@@ -3,10 +3,17 @@ import type { ApiError } from "@/services/readme";
 import { AlertCircle } from "lucide-react";
 import { getErrorMessage } from "@/services/readme";
 
-const ErrorDisplay = ({ error }: { error: ApiError }) => (
+interface ErrorDisplayProps {
+  error: ApiError;
+  message?: string;
+}
+
+const ErrorDisplay = ({ error, message }: ErrorDisplayProps) => (
   <Alert variant="destructive" className="mb-4">
     <AlertCircle className="h-5 w-5" />
-    <AlertTitle className="text-lg font-semibold">Generation Failed</AlertTitle>
+    <AlertTitle className="text-lg font-semibold">
+      {message || "Generation Failed"}
+    </AlertTitle>
     <AlertDescription className="mt-2">
       <div className="space-y-2">
         <p className="text-base">{getErrorMessage(error)}</p>
