@@ -18,7 +18,7 @@ from readme_ai.prompts import (
     choose_file_prompt,
     binary_extensions,
     analyse_file_prompt,
-    gitignore_by_language
+    gitignore_by_language,
 )
 
 logger = logging.getLogger(__name__)
@@ -26,17 +26,22 @@ logger = logging.getLogger(__name__)
 
 class ImportantFiles(BaseModel):
     """Model for storing important repository file paths"""
+
     files: List[str] = Field(description="List of important repository file paths")
 
 
 class FileAnalysis(BaseModel):
     """Model for storing file analysis results"""
+
     path: str = Field(description="Path of the analyzed file")
-    analysis: str = Field(description="Detailed analysis of the file's purpose and functionality")
+    analysis: str = Field(
+        description="Detailed analysis of the file's purpose and functionality"
+    )
 
 
 class RepoAnalyzerState(TypedDict):
     """Type definition for the analyzer state"""
+
     messages: Annotated[List[Dict[str, str]], "Messages for the analysis"]
     analysis: List[Dict[str, str]]
     important_files: List[str]
@@ -46,15 +51,16 @@ class RepoAnalyzerState(TypedDict):
 
 class AnalysisError(Exception):
     """Custom exception for analysis errors"""
+
     def __init__(self, message: str, details: Optional[Dict] = None):
         self.message = message
         self.details = details or {}
         super().__init__(self.message)
 
 
-
 class RepoAnalyzerAgent:
     """Main class for analyzing GitHub repositories"""
+
     def __init__(self, github_token: str):
         logger.info("Initializing RepoAnalyzerAgent")
         self.github_token = github_token
@@ -102,7 +108,7 @@ class RepoAnalyzerAgent:
             logger.info(f"Selected Important Files: {files}")
             return {**state, "important_files": files}
         except Exception as e:
-            raise AnalysisError( 
+            raise AnalysisError(
                 "Failed to choose important files",
                 {
                     "step": "choose_files",
@@ -114,25 +120,24 @@ class RepoAnalyzerAgent:
     @lru_cache(maxsize=128)
     async def _is_ignore_file(self, file_path: str, repo_url: str) -> bool:
         # These file extensions should always be analyzed
-        always_analyze = {'.yml', '.yaml', '.py', '.json', '.sh', '.md', '.txt'}
-        
+        always_analyze = {".yml", ".yaml", ".py", ".json", ".sh", ".md", ".txt"}
+
         extension = "." + file_path.split(".")[-1].lower() if "." in file_path else ""
-        
+
         # If it's in our always analyze list, return False
         if extension in always_analyze:
             return False
-            
+
         # Otherwise check against binary and language-specific extensions
         repo_metadata = await self.get_github_repo_metadata(repo_url, self.github_token)
-        specific_extensions = gitignore_by_language.get(repo_metadata["language"], set())
-        
+        specific_extensions: List[str] = gitignore_by_language.get(
+            repo_metadata["language"], []
+        )
+
         return extension in binary_extensions or extension in specific_extensions
 
-    
-   
-
     async def _analyze_files_concurrently(
-        self, files_content: Dict[str, str], repo_url:str
+        self, files_content: Dict[str, str], repo_url: str
     ) -> List[Dict[str, str]]:
         async def analyze_single_file(file_path: str, content: str) -> Dict[str, str]:
             try:
@@ -199,7 +204,9 @@ class RepoAnalyzerAgent:
             if not files_content:
                 raise AnalysisError("Failed to read any files")
 
-            analyses = await self._analyze_files_concurrently(files_content, state["repo_url"])
+            analyses = await self._analyze_files_concurrently(
+                files_content, state["repo_url"]
+            )
 
             return {**state, "analysis": analyses}
         except Exception as e:
@@ -310,7 +317,7 @@ class RepoAnalyzerAgent:
         github_client = Github(token)
         try:
             owner, repo_name = self.parse_github_url(repo_url)
-            repo_full_name = f"{owner}/{repo_name}" 
+            repo_full_name = f"{owner}/{repo_name}"
             repo_obj = github_client.get_repo(repo_full_name)
 
             logger.info(f"Repo Object: {repo_obj.__str__()}")
@@ -330,14 +337,13 @@ class RepoAnalyzerAgent:
         finally:
             github_client.close()
 
-
     async def get_github_repo_metadata(self, repo_url: str, token: str) -> dict:
         github_client = Github(token)
         try:
             owner, repo_name = self.parse_github_url(repo_url)
             repo_full_name = f"{owner}/{repo_name}"
             repo_obj = github_client.get_repo(repo_full_name)
-            
+
             metadata = {
                 "full_name": repo_obj.full_name,
                 "description": repo_obj.description,
@@ -349,7 +355,7 @@ class RepoAnalyzerAgent:
                 "created_at": repo_obj.created_at.isoformat(),
                 "updated_at": repo_obj.updated_at.isoformat(),
             }
-            
+
             logger.info(f"Repo Metadata: {metadata}")
             return metadata
         except Exception as e:

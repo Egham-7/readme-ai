@@ -173,36 +173,50 @@ writing_readme_prompt = ChatPromptTemplate.from_messages(
 )
 
 
-
-
 gitignore_by_language = {
     "C/C++": [
-        "*.o", "*.obj",          # Object files
-        "*.exe", "*.dll", "*.so",  # Executables/libraries
-        "*.a", "*.lib",          # Static libraries
-        "CMakeCache.txt", "CMakeFiles/", "cmake_install.cmake"
+        "*.o",
+        "*.obj",  # Object files
+        "*.exe",
+        "*.dll",
+        "*.so",  # Executables/libraries
+        "*.a",
+        "*.lib",  # Static libraries
+        "CMakeCache.txt",
+        "CMakeFiles/",
+        "cmake_install.cmake",
     ],
     "Java": [
-        "*.class",               # Compiled classes
-        "*.jar", "*.war", "*.ear", # Archive files
-        "target/", "out/"        # Common output directories
+        "*.class",  # Compiled classes
+        "*.jar",
+        "*.war",
+        "*.ear",  # Archive files
+        "target/",
+        "out/",  # Common output directories
     ],
     "Python": [
-        "__pycache__/", "*.py[cod]", "*.pyo",  # Bytecode and caches
-        "env/", "venv/",                       # Virtual environments
-        "build/", "dist/", "*.egg-info/", "*.egg"
+        "__pycache__/",
+        "*.py[cod]",
+        "*.pyo",  # Bytecode and caches
+        "env/",
+        "venv/",  # Virtual environments
+        "build/",
+        "dist/",
+        "*.egg-info/",
+        "*.egg",
     ],
     "JavaScript": [
-        "node_modules/",                         # Dependencies
-        "npm-debug.log*", "yarn-debug.log*", "yarn-error.log*",
-        "build/", "dist/", "coverage/"
+        "node_modules/",  # Dependencies
+        "npm-debug.log*",
+        "yarn-debug.log*",
+        "yarn-error.log*",
+        "build/",
+        "dist/",
+        "coverage/",
     ],
-    ".NET": [
-        "bin/", "obj/",  # Build outputs
-        "*.user", "*.suo"
-    ],
+    ".NET": ["bin/", "obj/", "*.user", "*.suo"],  # Build outputs
     "PHP": ["vendor/"],
     "Go": ["bin/", "pkg/"],
     "Rust": ["target/"],
-    "Haskell": [".stack-work/"]
+    "Haskell": [".stack-work/"],
 }
