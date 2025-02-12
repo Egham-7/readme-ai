@@ -13,8 +13,8 @@ class MissingEnvironmentVariable(Exception):
 
 class Settings(BaseSettings):
     # API Keys
-    GROQ_API_KEY: str = "test"
-    GITHUB_TOKEN: str = "test"
+    GROQ_API_KEY: str = ""
+    GITHUB_TOKEN: str = ""
 
     # App Settings
     APP_NAME: str = "README Generator"

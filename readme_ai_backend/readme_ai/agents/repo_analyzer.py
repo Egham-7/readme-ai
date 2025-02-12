@@ -1,25 +1,38 @@
+# Standard library imports
 from urllib.parse import urlparse
+import logging
+import asyncio
+from functools import lru_cache
+
+# Third-party imports
 from github.ContentFile import ContentFile  # type:ignore
 from github import Github, UnknownObjectException  # type: ignore
 from typing import List, Optional, Dict, Any, TypedDict, Annotated, cast
 from langgraph.graph import StateGraph, START, END  # type: ignore
 from langchain_groq import ChatGroq  # type: ignore
-
 from pydantic import BaseModel, Field  # type:ignore
-import logging
-import asyncio  # type:ignore
 from aiohttp import ClientSession  # type:ignore
-from functools import lru_cache
-from readme_ai.prompts import choose_file_prompt, binary_extensions, analyse_file_prompt
+
+# Local imports
+from readme_ai.prompts import (
+    choose_file_prompt,
+    binary_extensions,
+    analyse_file_prompt,
+    gitignore_by_language,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class ImportantFiles(BaseModel):
+    """Model for storing important repository file paths"""
+
     files: List[str] = Field(description="List of important repository file paths")
 
 
 class FileAnalysis(BaseModel):
+    """Model for storing file analysis results"""
+
     path: str = Field(description="Path of the analyzed file")
     analysis: str = Field(
         description="Detailed analysis of the file's purpose and functionality"
@@ -27,6 +40,8 @@ class FileAnalysis(BaseModel):
 
 
 class RepoAnalyzerState(TypedDict):
+    """Type definition for the analyzer state"""
+
     messages: Annotated[List[Dict[str, str]], "Messages for the analysis"]
     analysis: List[Dict[str, str]]
     important_files: List[str]
@@ -35,6 +50,8 @@ class RepoAnalyzerState(TypedDict):
 
 
 class AnalysisError(Exception):
+    """Custom exception for analysis errors"""
+
     def __init__(self, message: str, details: Optional[Dict] = None):
         self.message = message
         self.details = details or {}
@@ -42,6 +59,8 @@ class AnalysisError(Exception):
 
 
 class RepoAnalyzerAgent:
+    """Main class for analyzing GitHub repositories"""
+
     def __init__(self, github_token: str):
         logger.info("Initializing RepoAnalyzerAgent")
         self.github_token = github_token
@@ -99,17 +118,30 @@ class RepoAnalyzerAgent:
             )
 
     @lru_cache(maxsize=128)
-    def _is_binary_file(self, file_path: str) -> bool:
-        binary_extensions1 = binary_extensions
+    async def _is_ignore_file(self, file_path: str, repo_url: str) -> bool:
+        # These file extensions should always be analyzed
+        always_analyze = {".yml", ".yaml", ".py", ".json", ".sh", ".md", ".txt"}
+
         extension = "." + file_path.split(".")[-1].lower() if "." in file_path else ""
-        return extension in binary_extensions1
+
+        # If it's in our always analyze list, return False
+        if extension in always_analyze:
+            return False
+
+        # Otherwise check against binary and language-specific extensions
+        repo_metadata = await self.get_github_repo_metadata(repo_url, self.github_token)
+        specific_extensions: List[str] = gitignore_by_language.get(
+            repo_metadata["language"], []
+        )
+
+        return extension in binary_extensions or extension in specific_extensions
 
     async def _analyze_files_concurrently(
-        self, files_content: Dict[str, str]
+        self, files_content: Dict[str, str], repo_url: str
     ) -> List[Dict[str, str]]:
         async def analyze_single_file(file_path: str, content: str) -> Dict[str, str]:
             try:
-                if self._is_binary_file(file_path):
+                if await self._is_ignore_file(file_path, repo_url):
                     return {
                         "path": file_path,
                         "analysis": "Binary file - analysis skipped",
@@ -172,7 +204,9 @@ class RepoAnalyzerAgent:
             if not files_content:
                 raise AnalysisError("Failed to read any files")
 
-            analyses = await self._analyze_files_concurrently(files_content)
+            analyses = await self._analyze_files_concurrently(
+                files_content, state["repo_url"]
+            )
 
             return {**state, "analysis": analyses}
         except Exception as e:
@@ -299,6 +333,36 @@ class RepoAnalyzerAgent:
             raise AnalysisError(
                 "Failed to read GitHub content",
                 {"repo": repo_url, "path": path, "error": str(e)},
+            )
+        finally:
+            github_client.close()
+
+    async def get_github_repo_metadata(self, repo_url: str, token: str) -> dict:
+        github_client = Github(token)
+        try:
+            owner, repo_name = self.parse_github_url(repo_url)
+            repo_full_name = f"{owner}/{repo_name}"
+            repo_obj = github_client.get_repo(repo_full_name)
+
+            metadata = {
+                "full_name": repo_obj.full_name,
+                "description": repo_obj.description,
+                "stars": repo_obj.stargazers_count,
+                "forks": repo_obj.forks_count,
+                "open_issues": repo_obj.open_issues_count,
+                "watchers": repo_obj.watchers_count,
+                "language": repo_obj.language,
+                "created_at": repo_obj.created_at.isoformat(),
+                "updated_at": repo_obj.updated_at.isoformat(),
+            }
+
+            logger.info(f"Repo Metadata: {metadata}")
+            return metadata
+        except Exception as e:
+            logger.error(f"Error fetching GitHub metadata: {e}")
+            raise AnalysisError(
+                "Failed to fetch GitHub metadata",
+                {"repo": repo_url, "error": str(e)},
             )
         finally:
             github_client.close()
