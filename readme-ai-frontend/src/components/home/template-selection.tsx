@@ -399,9 +399,11 @@ export function TemplateSelection({
             <h3 className="text-base md:text-xl font-semibold">
               Community Templates
             </h3>
-            <Button variant="outline" className="w-full md:w-auto">
-              Submit Template
-            </Button>
+            <Link to="/templates/create">
+              <Button variant="outline" className="w-full md:w-auto">
+                Submit Template
+              </Button>
+            </Link>
           </div>
           <CommunityTemplatesContent onSelect={onSelect} />
         </TabsContent>

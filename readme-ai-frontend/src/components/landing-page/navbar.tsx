@@ -1,6 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { SignInButton, SignUpButton } from "@clerk/clerk-react";
+import {
+  SignInButton,
+  SignUpButton,
+  SignedIn,
+  SignedOut,
+} from "@clerk/clerk-react";
 
 const navLinks = [
   { name: "Features", to: "features" },
@@ -35,17 +40,28 @@ export default function Navbar() {
               </div>
             </div>
           </div>
+
           <div className="flex items-center space-x-4">
-            <SignInButton forceRedirectUrl="/home">
-              <Button variant="ghost" className="text-sm">
-                Sign In
-              </Button>
-            </SignInButton>
-            <SignUpButton forceRedirectUrl="/home">
-              <Button className="text-sm bg-gradient-to-r from-primary to-accent hover:opacity-90">
-                Get Started
-              </Button>
-            </SignUpButton>
+            <SignedOut>
+              <SignInButton forceRedirectUrl="/home">
+                <Button variant="ghost" className="text-sm">
+                  Sign In
+                </Button>
+              </SignInButton>
+              <SignUpButton forceRedirectUrl="/home">
+                <Button className="text-sm bg-gradient-to-r from-primary to-accent hover:opacity-90">
+                  Get Started
+                </Button>
+              </SignUpButton>
+            </SignedOut>
+
+            <SignedIn>
+              <Link to="/home">
+                <Button className="text-sm bg-gradient-to-r from-primary to-accent hover:opacity-90">
+                  Dashboard
+                </Button>
+              </Link>
+            </SignedIn>
           </div>
         </div>
       </div>
