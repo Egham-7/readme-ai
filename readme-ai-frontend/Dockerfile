@@ -1,4 +1,4 @@
-FROM oven/bun:1 AS build
+FROM oven/bun:latest AS build
 
 WORKDIR /app
 
@@ -9,7 +9,9 @@ RUN bun install --frozen-lockfile
 COPY . .
 
 ARG VITE_BASE_API_URL
+ARG VITE_CLERK_PUBLISHABLE_KEY
 ENV VITE_BASE_API_URL=$VITE_BASE_API_URL
+ENV VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
 
 RUN bun run build
 
