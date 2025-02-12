@@ -278,7 +278,8 @@ const CommunityTemplatesContent = ({
   const { data, isLoading, error } = useTemplates(page);
 
   if (isLoading) return <TemplatesContentSkeleton />;
-  if (error) return <ErrorDisplay error={error} />;
+  if (error)
+    return <ErrorDisplay message={"Failed to get templates"} error={error} />;
 
   if (!data || (data && data.data && data.data.length <= 0)) {
     return (
@@ -328,7 +329,10 @@ const UserTemplatesContent = ({
   const { data, isLoading, error } = useUserTemplates(page);
 
   if (isLoading) return <TemplatesContentSkeleton />;
-  if (error) return <ErrorDisplay error={error} />;
+  if (error)
+    return (
+      <ErrorDisplay message={"Failed to get your templates"} error={error} />
+    );
   if (!data?.data.length) {
     return (
       <div className="p-3 md:p-6 border rounded-lg bg-card text-center text-muted-foreground text-sm md:text-base">
