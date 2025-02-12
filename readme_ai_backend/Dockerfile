@@ -55,10 +55,10 @@ WORKDIR /app
 # Copy project files
 COPY --chown=appuser:appuser ./readme_ai ./readme_ai
 
-COPY --chown=appuser:appuser docker-entrypoint.sh /docker-entrypoint.sh
+COPY --chown=appuser:appuser entrypoint.sh /entrypoint.sh
 
 # Make entrypoint script executable
-RUN chmod +x /docker-entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Expose port
 EXPOSE 8000
