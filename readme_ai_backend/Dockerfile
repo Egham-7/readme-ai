@@ -54,7 +54,7 @@ WORKDIR /app
 
 COPY --chown=appuser:appuser ./readme_ai ./readme_ai
 COPY --chown=appuser:appuser entrypoint.sh /entrypoint.sh
-COPY --chown=appuser:appuser alembic.ini /alembic.ini
+COPY --chown=appuser:appuser alembic.ini /app/alembic.ini
 
 # Make entrypoint script executable
 RUN chmod +x /entrypoint.sh
