@@ -42,8 +42,6 @@ RUN poetry install --only main --no-root
 # Runtime stage
 FROM python-base AS production
 
-
-
 # Copy virtual environment from builder
 COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
 
@@ -60,6 +58,6 @@ COPY --chown=appuser:appuser ./readme_ai ./readme_ai
 # Expose port
 EXPOSE 8000
 
-# Start the FastAPI application with Hypercorn
-CMD hypercorn readme_ai.main:app --bind "[::]:$PORT"
+# Run migrations and start the application
+ENTRYPOINT ["/entrypoint.sh"]
 
