@@ -20,7 +20,6 @@ from hypercorn.config import Config
 from hypercorn.asyncio import serve
 import asyncio
 from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
 from readme_ai.repositories.template_repository import TemplateRepository
 from readme_ai.services.template_service import TemplateService
 from readme_ai.services.miniio_service import MinioService, get_minio_service
@@ -52,28 +51,10 @@ repo_analyzer: Optional[RepoAnalyzerAgent] = None
 readme_compiler: Optional[ReadmeCompilerAgent] = None
 
 
-@asynccontextmanager
-async def lifespan(_):
-    global repo_analyzer, readme_compiler
-    try:
-        repo_analyzer = RepoAnalyzerAgent(github_token=settings.GITHUB_TOKEN)
-        readme_compiler = ReadmeCompilerAgent()
-        logger.info("Initialized AI agents")
-        yield
-    except Exception as e:
-        logger.error(f"Startup error: {str(e)}")
-        raise
-    finally:
-        if hasattr(repo_analyzer, "session"):
-            await repo_analyzer.session.close()
-        logger.info("Cleaned up resources")
-
-
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     debug=settings.DEBUG,
-    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -144,6 +125,9 @@ async def root(request: Request):
 async def generate_readme(request: Request, repo_request: RepoRequest):
     """Generate README asynchronously"""
     timestamp = datetime.now().isoformat()
+
+    repo_analyzer = RepoAnalyzerAgent(github_token=settings.GITHUB_TOKEN)
+    readme_compiler = ReadmeCompilerAgent()
 
     try:
         if not repo_analyzer or not readme_compiler:
