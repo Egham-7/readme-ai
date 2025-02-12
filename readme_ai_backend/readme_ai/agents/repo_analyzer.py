@@ -10,7 +10,7 @@ import logging
 import asyncio  # type:ignore
 from aiohttp import ClientSession  # type:ignore
 from functools import lru_cache
-from readme_ai.prompts import choose_file_prompt, binary_extensions, analyse_file_prompt
+from readme_ai.prompts import choose_file_prompt, binary_extensions, analyse_file_prompt,gitignore_by_language
 
 logger = logging.getLogger(__name__)
 
@@ -99,17 +99,24 @@ class RepoAnalyzerAgent:
             )
 
     @lru_cache(maxsize=128)
-    def _is_binary_file(self, file_path: str) -> bool:
+    def _is_ignore_file(self, file_path: str, repo_url:str) -> bool:
         binary_extensions1 = binary_extensions
+        repo_metadata = self.get_github_repo_metadata(repo_url,self.github_token)
+        specific_extensions = gitignore_by_language[repo_metadata["language"]]
+
         extension = "." + file_path.split(".")[-1].lower() if "." in file_path else ""
-        return extension in binary_extensions1
+
+        return extension in (binary_extensions1 or specific_extensions)
+
+    
+   
 
     async def _analyze_files_concurrently(
-        self, files_content: Dict[str, str]
+        self, files_content: Dict[str, str], repo_url:str
     ) -> List[Dict[str, str]]:
         async def analyze_single_file(file_path: str, content: str) -> Dict[str, str]:
             try:
-                if self._is_binary_file(file_path):
+                if self._is_ignore_file(repo_url, file_path):
                     return {
                         "path": file_path,
                         "analysis": "Binary file - analysis skipped",
@@ -172,7 +179,7 @@ class RepoAnalyzerAgent:
             if not files_content:
                 raise AnalysisError("Failed to read any files")
 
-            analyses = await self._analyze_files_concurrently(files_content)
+            analyses = await self._analyze_files_concurrently(files_content, state["repo_url"])
 
             return {**state, "analysis": analyses}
         except Exception as e:
@@ -283,7 +290,7 @@ class RepoAnalyzerAgent:
         github_client = Github(token)
         try:
             owner, repo_name = self.parse_github_url(repo_url)
-            repo_full_name = f"{owner}/{repo_name}"
+            repo_full_name = f"{owner}/{repo_name}" 
             repo_obj = github_client.get_repo(repo_full_name)
 
             logger.info(f"Repo Object: {repo_obj.__str__()}")
@@ -299,6 +306,37 @@ class RepoAnalyzerAgent:
             raise AnalysisError(
                 "Failed to read GitHub content",
                 {"repo": repo_url, "path": path, "error": str(e)},
+            )
+        finally:
+            github_client.close()
+
+
+    async def get_github_repo_metadata(self, repo_url: str, token: str) -> dict:
+        github_client = Github(token)
+        try:
+            owner, repo_name = self.parse_github_url(repo_url)
+            repo_full_name = f"{owner}/{repo_name}"
+            repo_obj = github_client.get_repo(repo_full_name)
+            
+            metadata = {
+                "full_name": repo_obj.full_name,
+                "description": repo_obj.description,
+                "stars": repo_obj.stargazers_count,
+                "forks": repo_obj.forks_count,
+                "open_issues": repo_obj.open_issues_count,
+                "watchers": repo_obj.watchers_count,
+                "language": repo_obj.language,
+                "created_at": repo_obj.created_at.isoformat(),
+                "updated_at": repo_obj.updated_at.isoformat(),
+            }
+            
+            logger.info(f"Repo Metadata: {metadata}")
+            return metadata
+        except Exception as e:
+            logger.error(f"Error fetching GitHub metadata: {e}")
+            raise AnalysisError(
+                "Failed to fetch GitHub metadata",
+                {"repo": repo_url, "error": str(e)},
             )
         finally:
             github_client.close()
