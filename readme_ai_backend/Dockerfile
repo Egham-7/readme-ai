@@ -52,10 +52,9 @@ USER appuser
 # Set working directory
 WORKDIR /app
 
-# Copy project files
-COPY --chown=appuser:appuser ./readme_ai ./readme_ai
 
-COPY --chown=appuser:appuser entrypoint.sh /entrypoint.sh
+
+COPY --chown=appuser:appuser ./readme_ai ./readme_ai entrypoint.sh /entrypoint.sh alembic.ini /alembic.ini . /
 
 # Make entrypoint script executable
 RUN chmod +x /entrypoint.sh
