@@ -1,6 +1,5 @@
-from pydantic_settings import BaseSettings  # type: ignore
+from pydantic_settings import BaseSettings
 from functools import lru_cache
-import os
 from typing import Optional
 
 
@@ -36,16 +35,14 @@ class Settings(BaseSettings):
     MAX_CACHE_SIZE: int = 100
 
     # Database Settings
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL", "postgresql://postgres:secretpassword@postgres:5432/readmeai"
-    )
+    DATABASE_URL: str = "postgresql://postgres:secretpassword@postgres:5432/readmeai"
 
     # MinIO Settings
-    MINIO_PRIVATE_ENDPOINT: str = os.getenv("MINIO_PRIVATE_ENDPOINT", "minio:9000")
-    MINIO_ROOT_USER: str = os.getenv("MINIO_ROOT_USER", "minioadmin")
-    MINIO_ROOT_PASSWORD: str = os.getenv("MINIO_ROOT_PASSWORD", "minioadmin")
+    MINIO_PRIVATE_ENDPOINT: str = "minio:9000"
+    MINIO_ROOT_USER: str = "minioadmin"
+    MINIO_ROOT_PASSWORD: str = "minioadmin"
     MINIO_BUCKET_NAME: str = "readmeai"
-    MINIO_SECURE: bool = os.getenv("MINIO_SECURE", "false").lower() == "true"
+    MINIO_SECURE: bool = False
 
     # Logging Settings
     LOG_LEVEL: str = "INFO"
@@ -54,7 +51,7 @@ class Settings(BaseSettings):
     # Authentication Settings
     CLERK_SECRET_KEY: Optional[str] = None
     CLERK_PUBLISHABLE_KEY: Optional[str] = None
-    APP_URL: str = os.getenv("APP_URL", "http://localhost:3000")
+    APP_URL: str = "http://localhost:3000"
 
     class Config:
         env_file = ".env"
@@ -67,6 +64,10 @@ class Settings(BaseSettings):
             "DATABASE_URL": self.DATABASE_URL,
             "GITHUB_TOKEN": self.GITHUB_TOKEN,
             "GROQ_API_KEY": self.GROQ_API_KEY,
+            "MINIO_PRIVATE_ENDPOINT": self.MINIO_PRIVATE_ENDPOINT,
+            "MINIO_ROOT_USER": self.MINIO_ROOT_USER,
+            "MINIO_ROOT_PASSWORD": self.MINIO_ROOT_PASSWORD,
+            "MINIO_BUCKET_NAME": self.MINIO_BUCKET_NAME,
         }
 
         for var_name, var_value in critical_vars.items():
