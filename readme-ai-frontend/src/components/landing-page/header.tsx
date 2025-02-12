@@ -12,7 +12,7 @@ export default function Header() {
     <header className="py-4 px-6 bg-background border-b border-border">
       <div className="container mx-auto flex justify-between items-center">
         <Link to="/" className="text-2xl font-bold text-primary">
-          GitScribe
+          ReadYou
         </Link>
 
         <nav className="hidden md:flex space-x-6">
@@ -27,7 +27,7 @@ export default function Header() {
           ))}
         </nav>
 
-        <Button>Try GitScribe</Button>
+        <Button>Try ReadYou</Button>
       </div>
     </header>
   );

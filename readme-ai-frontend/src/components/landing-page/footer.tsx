@@ -27,7 +27,7 @@ export default function Footer() {
     <footer className="bg-background text-foreground py-12">
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         <div>
-          <h3 className="text-lg font-semibold mb-4">GitScribe</h3>
+          <h3 className="text-lg font-semibold mb-4">ReadYou</h3>
           <p className="text-muted-foreground">
             Crafting perfect documentation with AI.
           </p>
@@ -82,7 +82,7 @@ export default function Footer() {
       </div>
 
       <div className="container mx-auto mt-8 pt-8 border-t border-border text-center text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} GitScribe. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} ReadYou. All rights reserved.</p>
       </div>
     </footer>
   );
