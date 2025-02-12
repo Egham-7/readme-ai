@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     MINIO_ROOT_USER: str = os.getenv("MINIO_ROOT_USER", "minioadmin")
     MINIO_ROOT_PASSWORD: str = os.getenv("MINIO_ROOT_PASSWORD", "minioadmin")
     MINIO_BUCKET_NAME: str = "readmeai"
-    MINIO_SECURE: bool = False
+    MINIO_SECURE: bool = os.getenv("MINIO_SECURE", "false").lower() == "true"
 
     # Logging Settings
     LOG_LEVEL: str = "INFO"

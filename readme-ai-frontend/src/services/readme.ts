@@ -72,6 +72,9 @@ export const getErrorMessage = (error: ApiError): string => {
       return "We couldn't analyze this repository. Please verify the repository is public and contains code.";
     case "SERVICE_UNAVAILABLE":
       return "Our service is temporarily unavailable. Please try again in a few moments.";
+
+    case "INTERNAL_SERVER_ERROR":
+      return "Our service is experiencing a issue. Please try again later.";
     default:
       return "Something went wrong while generating your README. Please try again.";
   }
