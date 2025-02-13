@@ -2,7 +2,6 @@
 from urllib.parse import urlparse
 import logging
 import asyncio
-from functools import lru_cache
 
 # Third-party imports
 from github.ContentFile import ContentFile  # type:ignore
@@ -120,7 +119,6 @@ class RepoAnalyzerAgent:
                 },
             )
 
-    @lru_cache(maxsize=128)
     async def _is_ignore_file(self, file_path: str, repo_url: str) -> bool:
         # These file extensions should always be analyzed
         always_analyze = {".yml", ".yaml", ".py", ".json", ".sh", ".md", ".txt"}
@@ -274,7 +272,7 @@ class RepoAnalyzerAgent:
         raise ValueError(f"Invalid GitHub URL format {url}")
 
     async def get_repo_tree(self, repo_url: str, github_token: str) -> str:
-        def build_tree(
+        async def build_tree_async(
             content_list: List[ContentFile], repo, base_path: str = ""
         ) -> List[str]:
             tree = []
@@ -285,18 +283,22 @@ class RepoAnalyzerAgent:
                 full_path = f"{base_path}/{file_content.path}".lstrip("/")
                 depth = full_path.count("/")
 
+                # For files, check if they should be ignored
+                if file_content.type != "dir":
+                    should_ignore = await self._is_ignore_file(full_path, repo_url)
+                    if should_ignore:
+                        continue
+
                 if file_content.type == "dir":
                     tree.append(
-                        f"{'|   ' *
-                            depth}+-- {file_content.name}/ ({full_path})"
+                        f"{'|   ' * depth}+-- {file_content.name}/ ({full_path})"
                     )
                     dir_contents = repo.get_contents(full_path)
                     if isinstance(dir_contents, list):
                         contents.extend(dir_contents)
                 else:
                     tree.append(
-                        f"{'|   ' *
-                            depth}+-- {file_content.name} ({full_path})"
+                        f"{'|   ' * depth}+-- {file_content.name} ({full_path})"
                     )
 
             return tree
@@ -310,8 +312,8 @@ class RepoAnalyzerAgent:
             if not isinstance(initial_contents, list):
                 initial_contents = [initial_contents]
 
-            tree_structure = build_tree(initial_contents, repo)
-            return "\n".join(tree_structure)
+            tree_lines = await build_tree_async(initial_contents, repo)
+            return "\n".join(tree_lines)
         except UnknownObjectException:
             raise ValueError("Repository not found")
         finally:
