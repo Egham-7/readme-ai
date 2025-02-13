@@ -4,6 +4,7 @@ const API_BASE_URL =
 export interface RepoRequestParams {
   repo_url: string;
   branch?: string;
+  template_id?: number;
 }
 
 export interface HealthCheckResponse {
