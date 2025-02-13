@@ -1,90 +1,106 @@
 # <p align="center">🚀 README AI</p>
 
 <p align="center">
-    <em>A full-stack application with AI capabilities, featuring a React frontend, a backend API, and a PostgreSQL database, along with MinIO object storage.</em>
+    <em>AI-powered README generator</em>
 </p>
 
 <p align="center">
- <img src="https://img.shields.io/github/license/Egham-7/readme-ai?style=default&logo=opensourceinitiative&logoColor=white&color=0080ff" alt="license">
- <img src="https://img.shields.io/github/last-commit/Egham-7/readme-ai?style=default&logo=git&logoColor=white&color=0080ff" alt="last-commit">
- <img src="https://img.shields.io/github/languages/top/Egham-7/readme-ai?style=default&color=0080ff" alt="repo-top-language">
- <img src="https://img.shields.io/github/languages/count/Egham-7/readme-ai?style=default&color=0080ff" alt="repo-language-count">
+    <img src="https://img.shields.io/github/license/Egham-7/readme-ai?style=default&logo=opensourceinitiative&logoColor=white&color=0080ff" alt="license">
+    <img src="https://img.shields.io/github/last-commit/Egham-7/readme-ai?style=default&logo=git&logoColor=white&color=0080ff" alt="last-commit">
+    <img src="https://img.shields.io/github/languages/top/Egham-7/readme-ai?style=default&color=0080ff" alt="repo-top-language">
+    <img src="https://img.shields.io/github/languages/count/Egham-7/readme-ai?style=default&color=0080ff" alt="repo-language-count">
 </p>
 
-## Table of Contents
-- [Project Overview](#project-overview)
-- [Quick Start](#quick-start)
-- [Installation](#installation)
-- [Usage Examples](#usage-examples)
-- [API Docs](#api-docs)
-- [Build & Deployment](#build--deployment)
-- [Contribution Guide](#contribution-guide)
+## **Project Overview**
+The README AI project is an AI-powered tool designed to generate high-quality README files for GitHub repositories. The key features of this project include:
 
-## Project Overview
-**README AI** is a full-stack application that utilizes AI capabilities, built with a React frontend, a backend API, and a PostgreSQL database, along with MinIO object storage. The key features include:
-* **AI-powered functionality**: Leveraging machine learning models for intelligent processing
-* **React frontend**: A user-friendly interface built with React, utilizing Vite as the development server and TypeScript as the programming language
-* **Backend API**: A robust API handling requests and interactions with the database and object storage
-* **PostgreSQL database**: A relational database management system for storing and managing data
-* **MinIO object storage**: A cloud-native object storage system for storing and serving files
+* AI-driven content generation
+* Customizable templates
+* Automated repository analysis
 
-## Quick Start
-To get started with the application, follow these steps:
+## **Quick Start**
+To get started with the README AI project, follow these minimal setup instructions:
+
 1. Clone the repository: `git clone https://github.com/Egham-7/readme-ai.git`
-2. Change into the directory: `cd readme-ai`
-3. Build the project: `docker-compose up -d`
-4. Run the application: `docker-compose exec frontend npm run dev`
-5. Access the application at `http://localhost:3000`
+2. Navigate to the project directory: `cd readme-ai`
+3. Build the Docker image: `docker-compose build`
+4. Run the application: `docker-compose up`
 
-## Installation
+## **Installation**
+To install the README AI project, follow these steps:
+
 ### Prerequisites
-Ensure your system meets the following requirements:
-* **Language**: JavaScript (with TypeScript for the frontend)
-* **Build Tools**: Docker, Docker Compose
-* **Operating System**: Linux, macOS, Windows (with Docker support)
+* Python 3.x
+* Docker
+* Node.js (for frontend)
 
 ### Setup Steps
 1. Clone the repository: `git clone https://github.com/Egham-7/readme-ai.git`
-2. Change into the directory: `cd readme-ai`
-3. Build the project: `docker-compose up -d`
-4. Run the application: `docker-compose exec frontend npm run dev`
+2. Navigate to the project directory: `cd readme-ai`
+3. Build the Docker image: `docker-compose build`
+4. Run the application: `docker-compose up`
 
-## Usage Examples
-The application provides a user-friendly interface for interacting with the AI-powered functionality. Basic examples include:
-* **Text analysis**: Input text to analyze and receive insights
-* **Image processing**: Upload images to process and receive output
+## **Usage Examples**
+The README AI project provides a simple API for generating README files. To use the API, follow these steps:
 
-Common use cases include:
-* **Content generation**: Utilize the AI model to generate content based on input prompts
-* **Data analysis**: Leverage the application to analyze and visualize data
+* Send a POST request to `http://localhost:8000/generate` with the repository URL in the request body.
+* The API will generate a README file based on the repository's content and return it in the response.
 
-## API Docs
-The application's API documentation is available at `http://localhost:3000/api/docs`. The API endpoints include:
-* **/api/analyze**: Analyze text and receive insights
-* **/api/process**: Process images and receive output
+### Example Request
+```bash
+curl -X POST \
+  http://localhost:8000/generate \
+  -H 'Content-Type: application/json' \
+  -d '{"repository_url": "https://github.com/Egham-7/readme-ai"}'
+```
 
-## Build & Deployment
+## **API Docs**
+The README AI project provides a RESTful API for generating README files. The API endpoint is:
+
+* `POST /generate`: Generate a README file for a given repository.
+
+### API Request Body
+The request body should contain the following JSON object:
+```json
+{
+    "repository_url": "https://github.com/Egham-7/readme-ai"
+}
+```
+
+### API Response
+The API will return a JSON object containing the generated README file:
+```json
+{
+    "readme": "# README AI\n\nThis is a generated README file."
+}
+```
+
+## **Build & Deployment**
+To build and deploy the README AI project, follow these steps:
+
 ### Development Environment
-To build and run the application in a development environment, follow these steps:
 1. Clone the repository: `git clone https://github.com/Egham-7/readme-ai.git`
-2. Change into the directory: `cd readme-ai`
-3. Build the project: `docker-compose up -d`
-4. Run the application: `docker-compose exec frontend npm run dev`
+2. Navigate to the project directory: `cd readme-ai`
+3. Build the Docker image: `docker-compose build`
+4. Run the application: `docker-compose up`
 
 ### Production Environment
-To build and deploy the application in a production environment, follow these steps:
 1. Clone the repository: `git clone https://github.com/Egham-7/readme-ai.git`
-2. Change into the directory: `cd readme-ai`
-3. Build the project: `docker-compose -f docker-compose.prod.yml up -d`
-4. Run the application: `docker-compose -f docker-compose.prod.yml exec frontend npm run build`
+2. Navigate to the project directory: `cd readme-ai`
+3. Build the Docker image: `docker-compose build`
+4. Run the application: `docker-compose up -d`
 
-## Contribution Guide
+## **Contribution Guide**
 Contributions are welcome! To contribute to the project, follow these steps:
+
 1. Fork the repository
 2. Create a new branch (`git checkout -b feature-branch`)
 3. Commit your changes (`git commit -m "Add feature"`)
 4. Push to the branch (`git push origin feature-branch`)
 5. Open a pull request
 
+### Code of Conduct
+The README AI project follows the standard GitHub code of conduct. Please be respectful and professional in your interactions with other contributors.
+
 ### License
-This project is licensed under the [MIT License](https://github.com/Egham-7/readme-ai/blob/main/LICENSE).
+The README AI project is licensed under the [MIT License](https://github.com/Egham-7/readme-ai/blob/main/LICENSE).
