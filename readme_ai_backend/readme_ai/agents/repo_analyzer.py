@@ -2,7 +2,6 @@
 from urllib.parse import urlparse
 import logging
 import asyncio
-from functools import lru_cache
 
 # Third-party imports
 from github.ContentFile import ContentFile  # type:ignore
