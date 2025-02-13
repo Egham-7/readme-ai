@@ -140,12 +140,13 @@ class RepoAnalyzerAgent:
     ) -> List[Dict[str, str]]:
         async def analyze_single_file(file_path: str, content: str) -> Dict[str, str]:
             try:
+                """
                 if await self._is_ignore_file(file_path, repo_url):
                     return {
                         "path": file_path,
                         "analysis": "Binary file - analysis skipped",
                     }
-
+"""
                 analysis_prompt = analyse_file_prompt
 
                 logger.info(f"File Content: {content}")
