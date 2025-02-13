@@ -12,6 +12,7 @@ from langgraph.graph import StateGraph, START, END  # type: ignore
 from langchain_groq import ChatGroq  # type: ignore
 from pydantic import BaseModel, Field  # type:ignore
 from aiohttp import ClientSession  # type:ignore
+from readme_ai.services.file_analyzers import AnalyzerFactory, FileAnalyzer  # type: ignore
 
 # Local imports
 from readme_ai.prompts import (
@@ -71,12 +72,14 @@ class RepoAnalyzerAgent:
         self.graph = self._build_analysis_graph()
         self.session = ClientSession()
         self._file_content_cache: dict[str, str] = {}
+        self.analyzer_factory = AnalyzerFactory()
+
         logger.info("RepoAnalyzerAgent initialized successfully")
 
     async def __aenter__(self):
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self):
         await self.session.close()
 
     def _build_analysis_graph(self) -> Any:
@@ -147,7 +150,8 @@ class RepoAnalyzerAgent:
                         "analysis": "Binary file - analysis skipped",
                     }
 
-                analysis_prompt = analyse_file_prompt
+                analyzer: FileAnalyzer = self.analyzer_factory.get_analyzer(file_path)
+                technical_analysis = analyzer.analyze(content, file_path)
 
                 logger.info(f"File Content: {content}")
                 structured_llm = self.llm.with_structured_output(FileAnalysis)
@@ -155,8 +159,8 @@ class RepoAnalyzerAgent:
                 result = cast(
                     FileAnalysis,
                     await structured_llm.ainvoke(
-                        analysis_prompt.format(
-                            file_path=file_path, file_content=content
+                        analyse_file_prompt.format(
+                            file_path=file_path, file_content=technical_analysis
                         )
                     ),
                 )
