@@ -277,26 +277,30 @@ class RepoAnalyzerAgent:
         ) -> List[str]:
             tree = []
             contents = content_list.copy()
-            
+
             while contents:
                 file_content = contents.pop(0)
                 full_path = f"{base_path}/{file_content.path}".lstrip("/")
                 depth = full_path.count("/")
-                
+
                 # For files, check if they should be ignored
                 if file_content.type != "dir":
                     should_ignore = await self._is_ignore_file(full_path, repo_url)
                     if should_ignore:
                         continue
-                
+
                 if file_content.type == "dir":
-                    tree.append(f"{'|   ' * depth}+-- {file_content.name}/ ({full_path})")
+                    tree.append(
+                        f"{'|   ' * depth}+-- {file_content.name}/ ({full_path})"
+                    )
                     dir_contents = repo.get_contents(full_path)
                     if isinstance(dir_contents, list):
                         contents.extend(dir_contents)
                 else:
-                    tree.append(f"{'|   ' * depth}+-- {file_content.name} ({full_path})")
-                    
+                    tree.append(
+                        f"{'|   ' * depth}+-- {file_content.name} ({full_path})"
+                    )
+
             return tree
 
         github_client = Github(github_token)
@@ -304,7 +308,7 @@ class RepoAnalyzerAgent:
             owner, repo_name = self.parse_github_url(repo_url)
             repo = github_client.get_repo(f"{owner}/{repo_name}")
             initial_contents = repo.get_contents("")
-            
+
             if not isinstance(initial_contents, list):
                 initial_contents = [initial_contents]
 
