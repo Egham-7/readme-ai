@@ -100,6 +100,42 @@ binary_extensions = {
     ".swf",
     ".bak",
     ".cache",
+    # Images
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".bmp",
+    ".tiff",
+    ".ico",
+    ".svg",
+    # Other Binary Files
+    ".bin",
+    ".dat",
+    ".dmp",
+    ".iso",
+    ".tar",
+    ".gz",
+    ".bz2",
+    ".xz",
+    ".lz",
+    ".7z",
+    ".s7z",
+    ".apk",
+    ".bat",
+    ".cab",
+    ".cpl",
+    ".cur",
+    ".dll",
+    ".dmg",
+    ".drv",
+    ".icns",
+    ".ico",
+    ".img",
+    ".lnk",
+    ".msi",
+    ".sys",
+    ".tmp",
 }
 
 
@@ -185,6 +221,8 @@ gitignore_by_language = {
         "CMakeCache.txt",
         "CMakeFiles/",
         "cmake_install.cmake",
+        "*.out",  # Additional build outputs
+        "*.gch",  # Precompiled headers
     ],
     "Java": [
         "*.class",  # Compiled classes
@@ -193,6 +231,7 @@ gitignore_by_language = {
         "*.ear",  # Archive files
         "target/",
         "out/",  # Common output directories
+        "*.log",  # Log files generated during build
     ],
     "Python": [
         "__pycache__/",
@@ -204,6 +243,11 @@ gitignore_by_language = {
         "dist/",
         "*.egg-info/",
         "*.egg",
+        ".mypy_cache/",
+        ".pytest_cache/",
+        ".coverage",
+        "*.cover",
+        "htmlcov/",
     ],
     "JavaScript": [
         "node_modules/",  # Dependencies
@@ -213,10 +257,54 @@ gitignore_by_language = {
         "build/",
         "dist/",
         "coverage/",
+        ".cache/",
+        "tmp/",
+        "*.min.js",
     ],
-    ".NET": ["bin/", "obj/", "*.user", "*.suo"],  # Build outputs
-    "PHP": ["vendor/"],
-    "Go": ["bin/", "pkg/"],
-    "Rust": ["target/"],
-    "Haskell": [".stack-work/"],
+    ".NET": [
+        "bin/",
+        "obj/",
+        "*.user",
+        "*.suo",
+        "*.cache",
+        "*.pdb",
+        "TestResults/",
+        "packages/",
+    ],
+    "PHP": [
+        "vendor/",
+        "*.log",
+        "composer.lock",  # Sometimes not necessary for libraries
+    ],
+    "Go": [
+        "bin/",
+        "pkg/",
+        "*.test",
+    ],
+    "Rust": [
+        "target/",
+        "**/*.rs.bk",  # Backup files
+    ],
+    "Haskell": [
+        ".stack-work/",
+        "dist/",
+        "dist-newstyle/",
+    ],
+    "General": [
+        "*.log",
+        "*.tmp",
+        "*.swp",
+        "*.swo",
+        ".DS_Store",
+        "Thumbs.db",
+        ".idea/",
+        ".vscode/",
+        ".env",
+        ".env.*",
+        "coverage/",
+        "docs/_build/",
+        "bower_components/",
+        "jspm_packages/",
+        "cache/",
+    ],
 }
