@@ -1,5 +1,4 @@
 import type { useForm } from "react-hook-form";
-import LoadingSkeleton from "./skeletons/readme-generation";
 import {
   Card,
   CardHeader,
@@ -18,6 +17,7 @@ import { siGithub as Github } from "simple-icons";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import type { FormSchema } from "@/pages/home-page";
+import LoadingState from "./skeletons/readme-generation";
 
 interface GithubLinkFormProps {
   form: ReturnType<typeof useForm<FormSchema>>;
@@ -32,7 +32,7 @@ const GithubLinkForm = ({
   onBack,
   isLoading,
 }: GithubLinkFormProps) => {
-  if (isLoading) return <LoadingSkeleton />;
+  if (isLoading) return <LoadingState />;
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
