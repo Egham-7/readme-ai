@@ -42,6 +42,8 @@ import {
 import { TrashIcon, PencilIcon, EyeIcon } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
 
+import { FileIcon } from "lucide-react";
+
 const TemplateSkeleton = () => (
   <div className="w-full h-20 md:h-24 rounded-lg bg-muted animate-pulse" />
 );
@@ -62,6 +64,27 @@ const TemplatesContentSkeleton = () => (
     </div>
     <TemplateGridSkeleton />
   </div>
+);
+
+const DefaultTemplateCard = ({ onSelect }: { onSelect: () => void }) => (
+  <Card className="group hover:border-primary/50 transition-colors">
+    <CardHeader>
+      <CardTitle className="text-lg flex items-center gap-2">
+        <FileIcon className="h-5 w-5" />
+        Default Template
+      </CardTitle>
+    </CardHeader>
+    <CardContent>
+      <p className="text-sm text-muted-foreground">
+        Start with a basic README structure
+      </p>
+    </CardContent>
+    <CardFooter>
+      <Button onClick={onSelect} className="w-full">
+        Use Default
+      </Button>
+    </CardFooter>
+  </Card>
 );
 
 const DeleteTemplateModal = ({
@@ -260,19 +283,21 @@ const TemplateGrid = ({
   onSelect,
 }: {
   templates: Template[];
-  onSelect: (templateId: number) => void;
+  onSelect: (templateId?: number) => void;
 }) => (
   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
     {templates.map((template) => (
       <TemplateCard key={template.id} template={template} onSelect={onSelect} />
     ))}
+
+    <DefaultTemplateCard onSelect={() => onSelect(undefined)} />
   </div>
 );
 
 const CommunityTemplatesContent = ({
   onSelect,
 }: {
-  onSelect: (templateId: number) => void;
+  onSelect: (templateId?: number) => void;
 }) => {
   const [page, setPage] = useState(1);
   const { data, isLoading, error } = useTemplates(page);
@@ -323,7 +348,7 @@ const CommunityTemplatesContent = ({
 const UserTemplatesContent = ({
   onSelect,
 }: {
-  onSelect: (templateId: number) => void;
+  onSelect: (templateId?: number) => void;
 }) => {
   const [page, setPage] = useState(1);
   const { data, isLoading, error } = useUserTemplates(page);
@@ -375,7 +400,7 @@ const UserTemplatesContent = ({
 export function TemplateSelection({
   onSelect,
 }: {
-  onSelect: (templateId: number) => void;
+  onSelect: (templateId?: number) => void;
 }) {
   return (
     <div className="container mx-auto py-4 md:py-8 px-3 md:px-8 space-y-6 md:space-y-8">
