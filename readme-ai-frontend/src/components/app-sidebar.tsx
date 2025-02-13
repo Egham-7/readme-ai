@@ -40,7 +40,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-4 py-2 w-full">
-          <Link className="font-semibold flex items-center gap-x-2" to="/">
+          <Link className="font-semibold flex items-center gap-x-2" to="/home">
             <svg
               role="img"
               viewBox="0 0 24 24"
