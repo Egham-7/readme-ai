@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Any, TypedDict
+from typing import Dict, Any, Optional, TypedDict
 from langgraph.graph import StateGraph, START, END  # type:ignore
 from langchain_groq import ChatGroq  # type:ignore
 from pydantic import BaseModel, Field  # type:ignore
@@ -61,16 +61,12 @@ class ReadmeCompilerAgent:
                 formatted_analysis += f"File: {analysis['path']}\n"
                 formatted_analysis += f"Analysis: {analysis['analysis']}\n"
                 formatted_analysis += "-" * 50 + "\n"
-
                 analysis_formatted.append(formatted_analysis)
-
             return "\n".join(analysis_formatted)
 
         prompt = plan_prompt
-
-        logger.info(f"Analysis: {state["analysis"]} ")
+        logger.info(f"Analysis: {state['analysis']} ")
         formatted_analysis = _format_analysis_for_prompt(state["analysis"])
-
         logger.info(f"Formatted Analysis: {formatted_analysis}")
 
         result = await self.llm.ainvoke(
@@ -80,8 +76,8 @@ class ReadmeCompilerAgent:
                 repo_url=state["repo_url"],
             )
         )
-        logger.info("README planning completed")
 
+        logger.info("README planning completed")
         return {
             **state,
             "plan": str(result.content),
@@ -89,12 +85,9 @@ class ReadmeCompilerAgent:
 
     async def _write_readme(self, state: RepoAnalyzerState) -> RepoAnalyzerState:
         print("\n=== WRITING README ===")
-
         chain = writing_readme_prompt | self.llm
-
         result = await chain.ainvoke({"strategic_plan": state["plan"]})
         logger.info("README content generation completed")
-
         return {
             **state,
             "readme": str(result.content),
@@ -104,15 +97,17 @@ class ReadmeCompilerAgent:
         self,
         repo_url: str,
         repo_analysis: list[dict[str, str]],
-        temp: str = default_readme,
+        template_content: Optional[str] = None,
     ) -> Dict[str, Any]:
         logger.info("=== INITIATING README GENERATION ===")
         logger.info(f"Processing repository: {repo_url}")
 
+        template_to_use = template_content if template_content else default_readme
+
         initial_state: RepoAnalyzerState = {
             "plan": "",
             "readme": "",
-            "template": temp,
+            "template": template_to_use,
             "analysis": repo_analysis,
             "repo_url": repo_url,
         }
@@ -120,14 +115,15 @@ class ReadmeCompilerAgent:
         try:
             compiled_graph = self.graph.compile()
             final_state = await compiled_graph.ainvoke(initial_state)
+
             return {
                 "repo_url": repo_url,
                 "readme": final_state["readme"],
                 "analysis": final_state["analysis"],
                 "metadata": final_state.get("metadata", {}),
+                "template": template_to_use,
                 "status": "success",
             }
-
         except Exception as e:
             logger.error(f"README generation failed: {str(e)}")
             raise ValueError(f"README generation failed: {str(e)}")

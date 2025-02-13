@@ -13,3 +13,4 @@ class ErrorResponse(BaseModel):
 class RepoRequest(BaseModel):
     repo_url: HttpUrl
     branch: Optional[str] = "main"
+    template_id: Optional[int] = None
