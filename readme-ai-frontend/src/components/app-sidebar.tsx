@@ -1,5 +1,5 @@
 import * as React from "react";
-import { BookOpen, Files, FileText, Home } from "lucide-react";
+import { Files, Home } from "lucide-react";
 import { NavMain } from "@/components/nav-main";
 import {
   Sidebar,
@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Link } from "@tanstack/react-router";
 import { siGithub as Github } from "simple-icons";
+import { UserButton } from "@clerk/clerk-react";
 
 const navigationItems = [
   {
@@ -32,36 +33,6 @@ const navigationItems = [
       },
     ],
   },
-  {
-    title: "Documentation",
-    url: "/docs",
-    icon: BookOpen,
-    items: [
-      {
-        title: "Getting Started",
-        url: "/docs/getting-started",
-      },
-      {
-        title: "Markdown Guide",
-        url: "/docs/markdown-guide",
-      },
-    ],
-  },
-  {
-    title: "Examples",
-    url: "/examples",
-    icon: FileText,
-    items: [
-      {
-        title: "Basic README",
-        url: "/examples/basic",
-      },
-      {
-        title: "Project README",
-        url: "/examples/project",
-      },
-    ],
-  },
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -69,7 +40,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-4 py-2 w-full">
-          <Link className="font-semibold flex items-center gap-x-2" to="/">
+          <Link className="font-semibold flex items-center gap-x-2" to="/home">
             <svg
               role="img"
               viewBox="0 0 24 24"
@@ -83,8 +54,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </Link>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="justify-between h-full">
         <NavMain items={navigationItems} />
+
+        <div className="w-full flex justify-start items-center px-4 py-2">
+          <UserButton />
+        </div>
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
