@@ -122,7 +122,12 @@ async def root(request: Request):
 @app.post("/generate-readme")
 @limiter.limit("5/minute")
 @require_auth()
-async def generate_readme(request: Request, repo_request: RepoRequest):
+async def generate_readme(
+    request: Request,
+    repo_request: RepoRequest,
+    db: AsyncSession = Depends(get_db),
+    minio_service: MinioService = Depends(get_minio_service),
+):
     """Generate README asynchronously"""
     timestamp = datetime.now().isoformat()
 
@@ -164,9 +169,25 @@ async def generate_readme(request: Request, repo_request: RepoRequest):
                 ).model_dump(),
             )
 
+        template_id: Optional[int] = repo_request.template_id
+
+        template_content: Optional[str] = None
+
+        if template_id:
+            repository = TemplateRepository(db_session=db)
+            template_service = TemplateService(
+                template_repository=repository, minio_service=minio_service
+            )
+
+            template = await template_service.get_template(template_id)
+
+            template_content = template.content if template else None
+
         # Generate README with formatted analysis
         readme_content = await readme_compiler.gen_readme(
-            repo_url=str(repo_request.repo_url), repo_analysis=repo_analysis["analysis"]
+            repo_url=str(repo_request.repo_url),
+            repo_analysis=repo_analysis["analysis"],
+            template_content=template_content,
         )
 
         logger.info("README generation completed successfully")
