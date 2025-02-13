@@ -46,7 +46,7 @@ export function HomePage() {
   const onSubmit = (values: FormSchema) => {
     setError(undefined);
     generateReadme(
-      { repo_url: values.githubLink },
+      { repo_url: values.githubLink, template_id: templateId },
       {
         onSuccess: () => {
           setStep(3);
