@@ -143,20 +143,14 @@ class RepoAnalyzerAgent:
     ) -> List[Dict[str, str]]:
         async def analyze_single_file(file_path: str, content: str) -> Dict[str, str]:
             try:
-                """
                 if await self._is_ignore_file(file_path, repo_url):
                     return {
                         "path": file_path,
                         "analysis": "Binary file - analysis skipped",
                     }
-<<<<<<< HEAD
-"""
-                analysis_prompt = analyse_file_prompt
-=======
 
                 analyzer: FileAnalyzer = self.analyzer_factory.get_analyzer(file_path)
                 technical_analysis = analyzer.analyze(content, file_path)
->>>>>>> 467922e (Feat: Add file analyzers (#28))
 
                 logger.info(f"File Content: {content}")
                 structured_llm = self.llm.with_structured_output(FileAnalysis)
