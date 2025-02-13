@@ -2,6 +2,8 @@ services:
   frontend:
     build:
       context: ./readme-ai-frontend
+      args:
+        - VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
     ports:
       - "3000:3000"
     depends_on:
