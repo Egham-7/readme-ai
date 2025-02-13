@@ -128,9 +128,10 @@ class RepoAnalyzerAgent:
         # If it's in our always analyze list, return False
         if extension in always_analyze:
             return False
-
+        
         # Otherwise check against binary and language-specific extensions
         repo_metadata = await self.get_github_repo_metadata(repo_url, self.github_token)
+        print("LANGUAGE", repo_metadata["language"] )
         specific_extensions: List[str] = gitignore_by_language.get(
             repo_metadata["language"], []
         )
@@ -142,12 +143,13 @@ class RepoAnalyzerAgent:
     ) -> List[Dict[str, str]]:
         async def analyze_single_file(file_path: str, content: str) -> Dict[str, str]:
             try:
+                """
                 if await self._is_ignore_file(file_path, repo_url):
                     return {
                         "path": file_path,
                         "analysis": "Binary file - analysis skipped",
                     }
-
+                """
                 analyzer: FileAnalyzer = self.analyzer_factory.get_analyzer(file_path)
                 technical_analysis = analyzer.analyze(content, file_path)
 
@@ -350,7 +352,9 @@ class RepoAnalyzerAgent:
             repo_full_name = f"{owner}/{repo_name}"
             repo_obj = github_client.get_repo(repo_full_name)
 
-            metadata = {
+            print("LANGUGAE: ",repo_obj.language)
+
+            metadata = {    
                 "full_name": repo_obj.full_name,
                 "description": repo_obj.description,
                 "stars": repo_obj.stargazers_count,
