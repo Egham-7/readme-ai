@@ -128,10 +128,10 @@ class RepoAnalyzerAgent:
         # If it's in our always analyze list, return False
         if extension in always_analyze:
             return False
-        
+
         # Otherwise check against binary and language-specific extensions
         repo_metadata = await self.get_github_repo_metadata(repo_url, self.github_token)
-        print("LANGUAGE", repo_metadata["language"] )
+        print("LANGUAGE", repo_metadata["language"])
         specific_extensions: List[str] = gitignore_by_language.get(
             repo_metadata["language"], []
         )
@@ -352,9 +352,7 @@ class RepoAnalyzerAgent:
             repo_full_name = f"{owner}/{repo_name}"
             repo_obj = github_client.get_repo(repo_full_name)
 
-            print("LANGUGAE: ",repo_obj.language)
-
-            metadata = {    
+            metadata = {
                 "full_name": repo_obj.full_name,
                 "description": repo_obj.description,
                 "stars": repo_obj.stargazers_count,

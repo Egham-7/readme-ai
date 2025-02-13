@@ -22,27 +22,121 @@ choose_file_prompt = ChatPromptTemplate.from_messages(
 
 binary_extensions = {
     # Audio
-    ".mp3", ".wav", ".aac", ".flac", ".ogg", ".wma", ".m4a",
+    ".mp3",
+    ".wav",
+    ".aac",
+    ".flac",
+    ".ogg",
+    ".wma",
+    ".m4a",
     # Video
-    ".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".mpeg", ".mpg", ".webm",
+    ".mp4",
+    ".avi",
+    ".mov",
+    ".mkv",
+    ".wmv",
+    ".flv",
+    ".mpeg",
+    ".mpg",
+    ".webm",
     # Archives & Compressed Files
-    ".zip", ".tar", ".gz", ".bz2", ".7z", ".rar", ".iso", ".cab", ".lz", ".xz",
+    ".zip",
+    ".tar",
+    ".gz",
+    ".bz2",
+    ".7z",
+    ".rar",
+    ".iso",
+    ".cab",
+    ".lz",
+    ".xz",
     # Documents (binary formats)
-    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp", ".epub", ".mobi",
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".xls",
+    ".xlsx",
+    ".ppt",
+    ".pptx",
+    ".odt",
+    ".ods",
+    ".odp",
+    ".epub",
+    ".mobi",
     # Executable & System Files
-    ".exe", ".dll", ".com", ".msi", ".bin", ".sh", ".deb", ".rpm", ".so", ".jar", ".apk", ".app", ".sys", ".drv", ".efi", ".dmg", ".img",
+    ".exe",
+    ".dll",
+    ".com",
+    ".msi",
+    ".bin",
+    ".sh",
+    ".deb",
+    ".rpm",
+    ".so",
+    ".jar",
+    ".apk",
+    ".app",
+    ".sys",
+    ".drv",
+    ".efi",
+    ".dmg",
+    ".img",
     # Fonts
-    ".ttf", ".otf", ".woff", ".woff2", ".fon",
+    ".ttf",
+    ".otf",
+    ".woff",
+    ".woff2",
+    ".fon",
     # Compiled or Intermediate Files
-    ".pyc", ".class", ".o", ".obj", ".a", ".lib",
+    ".pyc",
+    ".class",
+    ".o",
+    ".obj",
+    ".a",
+    ".lib",
     # Miscellaneous
-    ".psd", ".indd", ".swf", ".bak", ".cache",
+    ".psd",
+    ".indd",
+    ".swf",
+    ".bak",
+    ".cache",
     # Images
-    ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".ico", ".svg",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".bmp",
+    ".tiff",
+    ".ico",
+    ".svg",
     # Other Binary Files
-    ".bin", ".dat", ".dmp", ".iso", ".tar", ".gz", ".bz2", ".xz", ".lz", ".7z", ".s7z", ".apk", ".bat", ".cab", ".cpl", ".cur", ".dll", ".dmg", ".drv", ".icns", ".ico", ".img", ".lnk", ".msi", ".sys", ".tmp"
+    ".bin",
+    ".dat",
+    ".dmp",
+    ".iso",
+    ".tar",
+    ".gz",
+    ".bz2",
+    ".xz",
+    ".lz",
+    ".7z",
+    ".s7z",
+    ".apk",
+    ".bat",
+    ".cab",
+    ".cpl",
+    ".cur",
+    ".dll",
+    ".dmg",
+    ".drv",
+    ".icns",
+    ".ico",
+    ".img",
+    ".lnk",
+    ".msi",
+    ".sys",
+    ".tmp",
 }
-
 
 
 analyse_file_prompt = ChatPromptTemplate.from_messages(
@@ -118,33 +212,33 @@ writing_readme_prompt = ChatPromptTemplate.from_messages(
 gitignore_by_language = {
     "C/C++": [
         "*.o",
-        "*.obj",            # Object files
+        "*.obj",  # Object files
         "*.exe",
         "*.dll",
-        "*.so",             # Executables/libraries
+        "*.so",  # Executables/libraries
         "*.a",
-        "*.lib",            # Static libraries
+        "*.lib",  # Static libraries
         "CMakeCache.txt",
         "CMakeFiles/",
         "cmake_install.cmake",
-        "*.out",            # Additional build outputs
-        "*.gch",            # Precompiled headers
+        "*.out",  # Additional build outputs
+        "*.gch",  # Precompiled headers
     ],
     "Java": [
-        "*.class",          # Compiled classes
+        "*.class",  # Compiled classes
         "*.jar",
         "*.war",
-        "*.ear",            # Archive files
+        "*.ear",  # Archive files
         "target/",
-        "out/",             # Common output directories
-        "*.log",            # Log files generated during build
+        "out/",  # Common output directories
+        "*.log",  # Log files generated during build
     ],
     "Python": [
         "__pycache__/",
         "*.py[cod]",
-        "*.pyo",            # Bytecode and caches
+        "*.pyo",  # Bytecode and caches
         "env/",
-        "venv/",            # Virtual environments
+        "venv/",  # Virtual environments
         "build/",
         "dist/",
         "*.egg-info/",
@@ -156,7 +250,7 @@ gitignore_by_language = {
         "htmlcov/",
     ],
     "JavaScript": [
-        "node_modules/",      # Dependencies
+        "node_modules/",  # Dependencies
         "npm-debug.log*",
         "yarn-debug.log*",
         "yarn-error.log*",
@@ -180,7 +274,7 @@ gitignore_by_language = {
     "PHP": [
         "vendor/",
         "*.log",
-        "composer.lock",      # Sometimes not necessary for libraries
+        "composer.lock",  # Sometimes not necessary for libraries
     ],
     "Go": [
         "bin/",
@@ -189,7 +283,7 @@ gitignore_by_language = {
     ],
     "Rust": [
         "target/",
-        "**/*.rs.bk",         # Backup files
+        "**/*.rs.bk",  # Backup files
     ],
     "Haskell": [
         ".stack-work/",
@@ -212,5 +306,5 @@ gitignore_by_language = {
         "bower_components/",
         "jspm_packages/",
         "cache/",
-    ]
+    ],
 }
