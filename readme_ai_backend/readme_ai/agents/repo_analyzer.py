@@ -283,7 +283,7 @@ class RepoAnalyzerAgent:
                 full_path = f"{base_path}/{file_content.path}".lstrip("/")
                 depth = full_path.count("/")
                 
-                # For files, check if they should be ignored.
+                # For files, check if they should be ignored
                 if file_content.type != "dir":
                     should_ignore = await self._is_ignore_file(full_path, repo_url)
                     if should_ignore:
@@ -291,7 +291,6 @@ class RepoAnalyzerAgent:
                 
                 if file_content.type == "dir":
                     tree.append(f"{'|   ' * depth}+-- {file_content.name}/ ({full_path})")
-                    # Get the contents of the directory
                     dir_contents = repo.get_contents(full_path)
                     if isinstance(dir_contents, list):
                         contents.extend(dir_contents)
@@ -305,6 +304,7 @@ class RepoAnalyzerAgent:
             owner, repo_name = self.parse_github_url(repo_url)
             repo = github_client.get_repo(f"{owner}/{repo_name}")
             initial_contents = repo.get_contents("")
+            
             if not isinstance(initial_contents, list):
                 initial_contents = [initial_contents]
 
@@ -314,8 +314,6 @@ class RepoAnalyzerAgent:
             raise ValueError("Repository not found")
         finally:
             github_client.close()
-
-
 
     async def read_github_content(self, repo_url: str, path: str, token: str) -> str:
         github_client = Github(token)
