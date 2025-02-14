@@ -18,7 +18,7 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
 ### Reporting Process
 
 1. **DO NOT** open a public issue on GitHub for security vulnerabilities
-2. Send your report privately to security@example.com
+2. Send your report privately to btrghstk@gmail.com
 3. Include detailed information about the vulnerability
 4. Provide steps to reproduce the issue
 
