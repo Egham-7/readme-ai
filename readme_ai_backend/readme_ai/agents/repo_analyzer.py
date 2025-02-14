@@ -15,6 +15,7 @@ from readme_ai.prompts import (
     analyse_file_prompt,
     gitignore_by_language,
 )
+from collections import deque
 
 logger = logging.getLogger(__name__)
 
@@ -228,12 +229,16 @@ class RepoAnalyzerAgent:
             content_list: List[ContentFile], repo, base_path: str = ""
         ) -> List[str]:
             tree = []
-            contents = content_list.copy()
+            contents = deque(content_list)
+            MAX_DEPTH = 2
 
             while contents:
-                file_content = contents.pop(0)
+                file_content = contents.popleft()
                 full_path = f"{base_path}/{file_content.path}".lstrip("/")
                 depth = full_path.count("/")
+
+                if depth > MAX_DEPTH:
+                    continue
 
                 if file_content.type != "dir" and await self._is_ignore_file(
                     full_path, repo_url
@@ -243,9 +248,10 @@ class RepoAnalyzerAgent:
                 prefix = "|   " * depth
                 if file_content.type == "dir":
                     tree.append(f"{prefix}+-- {file_content.name}/ ({full_path})")
-                    dir_contents = repo.get_contents(full_path)
-                    if isinstance(dir_contents, list):
-                        contents.extend(dir_contents)
+                    if depth < MAX_DEPTH:
+                        dir_contents = repo.get_contents(full_path)
+                        if isinstance(dir_contents, list):
+                            contents.extend(dir_contents)
                 else:
                     tree.append(f"{prefix}+-- {file_content.name} ({full_path})")
 
