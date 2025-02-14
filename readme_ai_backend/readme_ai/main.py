@@ -131,38 +131,28 @@ async def generate_readme(
     """Generate README asynchronously"""
     timestamp = datetime.now().isoformat()
 
-    repo_analyzer = RepoAnalyzerAgent(github_token=settings.GITHUB_TOKEN)
+    user: ClerkUser = request.state.user
+    github_token = user.get_github_token() or settings.GITHUB_TOKEN
+
+    repo_analyzer = RepoAnalyzerAgent(github_token=github_token)
     readme_compiler = ReadmeCompilerAgent()
 
     try:
-        if not repo_analyzer or not readme_compiler:
-            raise HTTPException(
-                status_code=503,
-                detail=ErrorResponse(
-                    message="Service unavailable",
-                    error_code="SERVICE_UNAVAILABLE",
-                    details={
-                        "analyzer": repo_analyzer is not None,
-                        "compiler": readme_compiler is not None,
-                    },
-                    timestamp=timestamp,
-                ).dict(),
-            )
-
         # Get repository analysis
         repo_analysis = await repo_analyzer.analyze_repo(
             repo_url=str(repo_request.repo_url)
         )
 
         if repo_analysis.get("status") == "error":
+            status_code = repo_analysis.get("details", {}).get("status_code", 422)
             return JSONResponse(
-                status_code=422,
+                status_code=status_code,
                 content=ErrorResponse(
-                    message="Repository analysis failed",
-                    error_code="ANALYSIS_FAILED",
+                    message=repo_analysis.get("message", "Repository analysis failed"),
+                    error_code=repo_analysis.get("error_code", "INTERNAL_SERVER_ERROR"),
                     details={
                         "repo_url": str(repo_request.repo_url),
-                        "error_message": repo_analysis.get("message", "Unknown error"),
+                        "error_details": repo_analysis.get("details", {}),
                         "branch": repo_request.branch,
                     },
                     timestamp=timestamp,
