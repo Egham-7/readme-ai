@@ -1,4 +1,4 @@
-const API_BASE_URL =
+export const API_BASE_URL =
   (import.meta.env.VITE_BASE_API_URL as string) || "http://localhost:8000";
 
 export interface RepoRequestParams {
@@ -68,6 +68,13 @@ export class ApiError extends Error {
   }
 }
 
+export interface ProgressUpdate {
+  stage: string;
+  message: string;
+  progress: number;
+  timestamp: string;
+}
+
 export const getErrorMessage = (error: ApiError): string => {
   switch (error.errorCode) {
     case "REPO_ACCESS_ERROR":
@@ -103,6 +110,7 @@ export const readmeService = {
   generateReadme: async (
     params: RepoRequestParams,
     token: string,
+    onProgress?: (update: ProgressUpdate) => void,
   ): Promise<string> => {
     const response = await fetch(`${API_BASE_URL}/generate-readme`, {
       method: "POST",
@@ -113,22 +121,42 @@ export const readmeService = {
       body: JSON.stringify(params),
     });
 
-    const data = (await response.json()) as
-      | ApiErrorResponse
-      | ApiSuccessResponse;
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
 
-    if (!response.ok) {
-      const errorData = data as ApiErrorResponse;
-      throw new ApiError(
-        errorData.message,
-        errorData.error_code,
-        errorData.details,
-        errorData.timestamp,
-      );
+    if (!reader) {
+      throw new Error("Failed to initialize stream reader");
     }
 
-    const successData = data as ApiSuccessResponse;
-    return successData.data;
+    let result = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split("\n");
+
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const eventData = JSON.parse(line.slice(6));
+          if (eventData.event === "progress" && onProgress) {
+            onProgress(JSON.parse(eventData.data));
+          } else if (eventData.event === "complete") {
+            result = JSON.parse(eventData.data).data;
+          } else if (eventData.event === "error") {
+            const errorData = JSON.parse(eventData.data);
+            throw new ApiError(
+              errorData.message,
+              errorData.error_code,
+              errorData.details,
+              errorData.timestamp,
+            );
+          }
+        }
+      }
+    }
+
+    return result;
   },
 
   checkHealth: async (): Promise<HealthCheckResponse> => {

@@ -26,8 +26,8 @@ from readme_ai.services.miniio_service import MinioService, get_minio_service
 from readme_ai.models.responses.template import TemplatesResponse, TemplateResponse
 from readme_ai.logging_config import logger
 from readme_ai.database import get_db
-from readme_ai.models.requests.readme import ErrorResponse, RepoRequest
-from readme_ai.auth import require_auth, ClerkUser
+from readme_ai.models.requests.readme import ErrorResponse
+from readme_ai.auth import require_auth, ClerkUser, require_sse_auth
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -35,6 +35,9 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from readme_ai.auth import AuthenticationError  # type: ignore
+from sse_starlette.sse import EventSourceResponse
+
+import json
 
 # Load environment variables and configure logging
 load_dotenv()
@@ -119,97 +122,137 @@ async def root(request: Request):
     }
 
 
-@app.post("/generate-readme")
+@app.get("/generate-readme")
 @limiter.limit("5/minute")
-@require_auth()
+@require_sse_auth()
 async def generate_readme(
     request: Request,
-    repo_request: RepoRequest,
+    token: str = Query(...),
+    repo_url: str = "",
+    template_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
     minio_service: MinioService = Depends(get_minio_service),
 ):
-    """Generate README asynchronously"""
-    timestamp = datetime.now().isoformat()
+    async def event_generator():
+        timestamp = datetime.now().isoformat()
+        user: ClerkUser = request.state.user
+        github_token = user.get_github_token() or settings.GITHUB_TOKEN
 
-    user: ClerkUser = request.state.user
-    github_token = user.get_github_token() or settings.GITHUB_TOKEN
+        repo_analyzer = RepoAnalyzerAgent(github_token=github_token)
+        readme_compiler = ReadmeCompilerAgent()
 
-    repo_analyzer = RepoAnalyzerAgent(github_token=github_token)
-    readme_compiler = ReadmeCompilerAgent()
+        try:
+            yield {
+                "event": "progress",
+                "data": json.dumps(
+                    {
+                        "stage": "init",
+                        "message": "Starting repository analysis...",
+                        "progress": 0.0,
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                ),
+            }
 
-    try:
-        # Get repository analysis
-        repo_analysis = await repo_analyzer.analyze_repo(
-            repo_url=str(repo_request.repo_url)
-        )
+            yield {
+                "event": "progress",
+                "data": json.dumps(
+                    {
+                        "stage": "analysis",
+                        "message": "Analyzing repository structure...",
+                        "progress": 0.3,
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                ),
+            }
 
-        if repo_analysis.get("status") == "error":
-            status_code = repo_analysis.get("details", {}).get("status_code", 422)
-            return JSONResponse(
-                status_code=status_code,
-                content=ErrorResponse(
-                    message=repo_analysis.get("message", "Repository analysis failed"),
-                    error_code=repo_analysis.get("error_code", "INTERNAL_SERVER_ERROR"),
-                    details={
-                        "repo_url": str(repo_request.repo_url),
-                        "error_details": repo_analysis.get("details", {}),
-                        "branch": repo_request.branch,
-                    },
-                    timestamp=timestamp,
-                ).model_dump(),
+            repo_analysis = await repo_analyzer.analyze_repo(repo_url=repo_url)
+
+            if repo_analysis.get("status") == "error":
+                yield {
+                    "event": "error",
+                    "data": json.dumps(
+                        {
+                            "message": repo_analysis.get(
+                                "message", "Repository analysis failed"
+                            ),
+                            "error_code": repo_analysis.get(
+                                "error_code", "INTERNAL_SERVER_ERROR"
+                            ),
+                            "timestamp": timestamp,
+                        }
+                    ),
+                }
+                return
+
+            yield {
+                "event": "progress",
+                "data": json.dumps(
+                    {
+                        "stage": "template",
+                        "message": "Fetching template...",
+                        "progress": 0.5,
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                ),
+            }
+
+            template_content: Optional[str] = None
+            if template_id:
+                repository = TemplateRepository(db_session=db)
+                template_service = TemplateService(
+                    template_repository=repository, minio_service=minio_service
+                )
+                template = await template_service.get_template(template_id)
+                template_content = template.content if template else None
+
+            yield {
+                "event": "progress",
+                "data": json.dumps(
+                    {
+                        "stage": "generation",
+                        "message": "Generating README content...",
+                        "progress": 0.7,
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                ),
+            }
+
+            readme_content = await readme_compiler.gen_readme(
+                repo_url=repo_url,
+                repo_analysis=repo_analysis["analysis"],
+                template_content=template_content,
             )
 
-        template_id: Optional[int] = repo_request.template_id
+            yield {
+                "event": "complete",
+                "data": json.dumps(
+                    {
+                        "status": "success",
+                        "data": readme_content["readme"],
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                ),
+            }
 
-        template_content: Optional[str] = None
+        except Exception as e:
+            logger.error(f"README generation error: {str(e)}")
+            yield {
+                "event": "error",
+                "data": json.dumps(
+                    {
+                        "message": "Internal server error during README generation",
+                        "error_code": "INTERNAL_SERVER_ERROR",
+                        "details": {
+                            "error_type": type(e).__name__,
+                            "error_message": str(e),
+                        },
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                ),
+            }
 
-        if template_id:
-            repository = TemplateRepository(db_session=db)
-            template_service = TemplateService(
-                template_repository=repository, minio_service=minio_service
-            )
-
-            template = await template_service.get_template(template_id)
-
-            template_content = template.content if template else None
-
-        # Generate README with formatted analysis
-        readme_content = await readme_compiler.gen_readme(
-            repo_url=str(repo_request.repo_url),
-            repo_analysis=repo_analysis["analysis"],
-            template_content=template_content,
-        )
-
-        logger.info("README generation completed successfully")
-        return {
-            "status": "success",
-            "data": readme_content["readme"],
-            "timestamp": timestamp,
-        }
-
-    except ValueError as ve:
-        logger.error(f"Validation error: {str(ve)}")
-        return JSONResponse(
-            status_code=400,
-            content=ErrorResponse(
-                message="Invalid input parameters",
-                error_code="VALIDATION_ERROR",
-                details={"validation_error": str(ve)},
-                timestamp=timestamp,
-            ).dict(),
-        )
-
-    except Exception as e:
-        logger.error(f"README generation error: {str(e)}")
-        return JSONResponse(
-            status_code=500,
-            content=ErrorResponse(
-                message="Internal server error during README generation",
-                error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
-                timestamp=timestamp,
-            ).dict(),
-        )
+    return EventSourceResponse(event_generator())
 
 
 @app.post(

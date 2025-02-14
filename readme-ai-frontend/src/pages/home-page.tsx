@@ -12,6 +12,7 @@ import StepHeader from "@/components/home/step-header";
 import { TemplateSelection } from "@/components/home/template-selection";
 import GithubLinkForm from "@/components/home/github-link-form";
 import MarkdownResult from "@/components/home/markdown-result";
+import { ProgressIndicator } from "@/components/progress-indicator";
 
 const COPY_TIMEOUT = 2000;
 
@@ -33,6 +34,7 @@ export function HomePage() {
     mutate: generateReadme,
     isPending,
     data: markdownData,
+    progress,
   } = useGenerateReadme();
 
   const form = useForm<FormSchema>({
@@ -92,19 +94,25 @@ export function HomePage() {
           }}
         />
       )}
-      {step === 2 && (
+      {step === 2 && !isPending && (
         <GithubLinkForm
           form={form}
           onSubmit={onSubmit}
           onBack={() => {
             setStep(1);
           }}
-          isLoading={isPending}
         />
       )}
-      {step === 3 && (
+
+      {isPending && (
+        <div className="mt-8">
+          <ProgressIndicator progress={progress} />
+        </div>
+      )}
+
+      {step === 3 && !isPending && (
         <MarkdownResult
-          markdown={markdownData}
+          markdown={markdownData ?? ""}
           error={error}
           onStartOver={() => {
             form.reset();
@@ -114,7 +122,6 @@ export function HomePage() {
           isCopied={isCopied}
           onCopy={handleCopy}
           handleSubmit={form.handleSubmit(onSubmit)}
-          isLoading={isPending}
         />
       )}
     </div>

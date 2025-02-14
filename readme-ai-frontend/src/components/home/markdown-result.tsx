@@ -13,7 +13,6 @@ import ErrorDisplay from "./error-display";
 import { RefreshCw, Check, Copy } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import MarkdownPreview from "../markdown-preview";
-import LoadingState from "./skeletons/readme-generation";
 
 interface MarkdownResultProps {
   markdown?: string;
@@ -22,7 +21,6 @@ interface MarkdownResultProps {
   isCopied: boolean;
   onCopy: () => Promise<void>;
   handleSubmit: () => void;
-  isLoading: boolean;
 }
 
 const MarkdownResult = ({
@@ -32,12 +30,7 @@ const MarkdownResult = ({
   isCopied,
   onCopy,
   handleSubmit,
-  isLoading,
 }: MarkdownResultProps) => {
-  if (isLoading) {
-    return <LoadingState />;
-  }
-
   if (error) {
     return (
       <Card className="w-full max-w-4xl mx-auto">
