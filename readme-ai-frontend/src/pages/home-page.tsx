@@ -35,6 +35,7 @@ export function HomePage() {
     isPending,
     data: markdownData,
     progress,
+    cancel,
   } = useGenerateReadme();
 
   const form = useForm<FormSchema>({
@@ -106,7 +107,7 @@ export function HomePage() {
 
       {isPending && (
         <div className="mt-8">
-          <ProgressIndicator progress={progress} />
+          <ProgressIndicator progress={progress} onCancel={cancel} />
         </div>
       )}
 

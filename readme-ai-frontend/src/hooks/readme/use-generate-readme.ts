@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import {
   API_BASE_URL,
@@ -11,6 +11,7 @@ import {
 export const useGenerateReadme = () => {
   const { getToken } = useAuth();
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   const mutation = useMutation<string, ApiError, RepoRequestParams>({
     mutationFn: async (params: RepoRequestParams) => {
@@ -29,6 +30,8 @@ export const useGenerateReadme = () => {
           })}`,
         );
 
+        eventSourceRef.current = eventSource;
+
         eventSource.addEventListener("progress", (event: MessageEvent) => {
           setProgress(JSON.parse(event.data));
         });
@@ -37,6 +40,7 @@ export const useGenerateReadme = () => {
           const result = JSON.parse(event.data);
           resolve(result.data);
           eventSource.close();
+          eventSourceRef.current = null;
         });
 
         eventSource.addEventListener("error", (event: MessageEvent) => {
@@ -56,13 +60,24 @@ export const useGenerateReadme = () => {
             );
           }
           eventSource.close();
+          eventSourceRef.current = null;
         });
       });
     },
   });
 
+  const cancel = () => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+      setProgress(null);
+      mutation.reset();
+    }
+  };
+
   return {
     ...mutation,
     progress,
+    cancel,
   };
 };
