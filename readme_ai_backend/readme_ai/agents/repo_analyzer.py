@@ -2,6 +2,7 @@
 from urllib.parse import urlparse
 import logging
 import asyncio
+from collections import deque
 
 # Third-party imports
 from github.ContentFile import ContentFile  # type:ignore
@@ -12,6 +13,7 @@ from langchain_groq import ChatGroq  # type: ignore
 from pydantic import BaseModel, Field  # type:ignore
 from aiohttp import ClientSession  # type:ignore
 from readme_ai.services.file_analyzers import AnalyzerFactory, FileAnalyzer  # type: ignore
+
 
 # Local imports
 from readme_ai.prompts import (
@@ -274,16 +276,18 @@ class RepoAnalyzerAgent:
         raise ValueError(f"Invalid GitHub URL format {url}")
 
     async def get_repo_tree(self, repo_url: str, github_token: str) -> str:
-        async def build_tree_async(
-            content_list: List[ContentFile], repo, base_path: str = ""
-        ) -> List[str]:
+        async def build_tree_async(content_list: List[ContentFile], repo) -> List[str]:
             tree = []
-            contents = content_list.copy()
+            queue = deque([(content, "", 0) for content in content_list])  # (file_content, base_path, depth)
 
-            while contents:
-                file_content = contents.pop(0)
+            while queue:
+                file_content, base_path, depth = queue.popleft()
+
                 full_path = f"{base_path}/{file_content.path}".lstrip("/")
-                depth = full_path.count("/")
+
+                # Stop processing deeper than depth 3
+                if depth > 3:
+                    continue
 
                 # For files, check if they should be ignored
                 if file_content.type != "dir":
@@ -292,16 +296,14 @@ class RepoAnalyzerAgent:
                         continue
 
                 if file_content.type == "dir":
-                    tree.append(
-                        f"{'|   ' * depth}+-- {file_content.name}/ ({full_path})"
-                    )
-                    dir_contents = repo.get_contents(full_path)
-                    if isinstance(dir_contents, list):
-                        contents.extend(dir_contents)
+                    tree.append(f"{'|   ' * depth}+-- {file_content.name}/ ({full_path})")
+                    if depth < 3:  # Only fetch contents if within depth limit
+                        dir_contents = repo.get_contents(full_path)
+                        if isinstance(dir_contents, list):
+                            for item in dir_contents:
+                                queue.append((item, full_path, depth + 1))
                 else:
-                    tree.append(
-                        f"{'|   ' * depth}+-- {file_content.name} ({full_path})"
-                    )
+                    tree.append(f"{'|   ' * depth}+-- {file_content.name} ({full_path})")
 
             return tree
 
