@@ -78,6 +78,9 @@ export const getErrorMessage = (error: ApiError): string => {
       return "We couldn't analyze this repository. Please verify the repository contains valid code.";
     case "INTERNAL_SERVER_ERROR":
       return "Our service is experiencing an issue. Please try again later.";
+
+    case "RATE_LIMIT_EXCEEDED":
+      return "You have made too many requests, please try again in 10 minutes.";
     default:
       return "Something went wrong while generating your README. Please try again.";
   }
