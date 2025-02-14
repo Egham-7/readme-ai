@@ -133,13 +133,13 @@ async def generate_readme(
     db: AsyncSession = Depends(get_db),
     minio_service: MinioService = Depends(get_minio_service),
 ):
+    github_token = settings.GITHUB_TOKEN
+
+    repo_analyzer = RepoAnalyzerAgent(github_token=github_token)
+    readme_compiler = ReadmeCompilerAgent()
+
     async def event_generator():
         timestamp = datetime.now().isoformat()
-        user: ClerkUser = request.state.user
-        github_token = settings.GITHUB_TOKEN
-
-        repo_analyzer = RepoAnalyzerAgent(github_token=github_token)
-        readme_compiler = ReadmeCompilerAgent()
 
         try:
             yield {
