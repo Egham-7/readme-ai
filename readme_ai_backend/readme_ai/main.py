@@ -136,7 +136,7 @@ async def generate_readme(
     async def event_generator():
         timestamp = datetime.now().isoformat()
         user: ClerkUser = request.state.user
-        github_token = user.get_github_token() or settings.GITHUB_TOKEN
+        github_token = settings.GITHUB_TOKEN
 
         repo_analyzer = RepoAnalyzerAgent(github_token=github_token)
         readme_compiler = ReadmeCompilerAgent()
