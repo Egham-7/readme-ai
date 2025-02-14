@@ -3,7 +3,7 @@ from fastapi import HTTPException, Request
 from clerk_backend_api import Clerk
 from clerk_backend_api.jwks_helpers import AuthenticateRequestOptions
 from readme_ai.settings import get_settings
-from typing import List, Dict, Any, cast
+from typing import List, Dict, Any, cast, Optional
 from pydantic import BaseModel
 import httpx
 
@@ -20,9 +20,25 @@ class ClerkUser(BaseModel):
     nbf: int
     sid: str
     sub: str
+    external_accounts: Optional[Dict[str, Any]] = None
 
     def get_user_id(self) -> str:
         return self.sub
+
+    def get_github_token(self) -> Optional[str]:
+        if not self.external_accounts:
+            return None
+
+        github_account = next(
+            (
+                acc
+                for acc in self.external_accounts.get("oauth_access_tokens", [])
+                if acc.get("provider") == "github"
+            ),
+            None,
+        )
+
+        return github_account.get("token") if github_account else None
 
 
 class AuthenticationError(HTTPException):
