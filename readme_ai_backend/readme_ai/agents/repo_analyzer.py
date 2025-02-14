@@ -16,6 +16,7 @@ from readme_ai.prompts import (
     gitignore_by_language,
 )
 from collections import deque
+
 logger = logging.getLogger(__name__)
 
 
@@ -225,36 +226,36 @@ class RepoAnalyzerAgent:
 
     async def get_repo_tree(self, repo_url: str, github_token: str) -> str:
         async def build_tree_async(
-                content_list: List[ContentFile], repo, base_path: str = ""
-            ) -> List[str]:
-                tree = []
-                contents = deque(content_list)
-                MAX_DEPTH = 2
+            content_list: List[ContentFile], repo, base_path: str = ""
+        ) -> List[str]:
+            tree = []
+            contents = deque(content_list)
+            MAX_DEPTH = 2
 
-                while contents:
-                    file_content = contents.popleft()
-                    full_path = f"{base_path}/{file_content.path}".lstrip("/")
-                    depth = full_path.count("/")
+            while contents:
+                file_content = contents.popleft()
+                full_path = f"{base_path}/{file_content.path}".lstrip("/")
+                depth = full_path.count("/")
 
-                    if depth > MAX_DEPTH:
-                        continue
+                if depth > MAX_DEPTH:
+                    continue
 
-                    if file_content.type != "dir" and await self._is_ignore_file(
-                        full_path, repo_url
-                    ):
-                        continue
+                if file_content.type != "dir" and await self._is_ignore_file(
+                    full_path, repo_url
+                ):
+                    continue
 
-                    prefix = "|   " * depth
-                    if file_content.type == "dir":
-                        tree.append(f"{prefix}+-- {file_content.name}/ ({full_path})")
-                        if depth < MAX_DEPTH:
-                            dir_contents = repo.get_contents(full_path)
-                            if isinstance(dir_contents, list):
-                                contents.extend(dir_contents)
-                    else:
-                        tree.append(f"{prefix}+-- {file_content.name} ({full_path})")
+                prefix = "|   " * depth
+                if file_content.type == "dir":
+                    tree.append(f"{prefix}+-- {file_content.name}/ ({full_path})")
+                    if depth < MAX_DEPTH:
+                        dir_contents = repo.get_contents(full_path)
+                        if isinstance(dir_contents, list):
+                            contents.extend(dir_contents)
+                else:
+                    tree.append(f"{prefix}+-- {file_content.name} ({full_path})")
 
-                return tree
+            return tree
 
         with Github(github_token) as github_client:
             try:
@@ -282,7 +283,6 @@ class RepoAnalyzerAgent:
                 raise RepoAccessError(
                     f"GitHub API error: {str(e)}", {"status_code": e.status}
                 )
-
 
     async def read_github_content(self, repo_url: str, path: str, token: str) -> str:
         with Github(token) as github_client:
