@@ -32,7 +32,7 @@ To install the README AI project, follow these steps:
 ### Prerequisites
 * Python 3.x
 * Docker
-* Node.js (for frontend)
+* Bun (for frontend)
 
 ### Setup Steps
 1. Clone the repository: `git clone https://github.com/Egham-7/readme-ai.git`
