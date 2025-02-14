@@ -209,7 +209,14 @@ class RepoAnalyzerAgent:
         parsed = urlparse(url)
         path_parts = parsed.path.strip("/").split("/")
 
-        if parsed.hostname and (parsed.hostname == "github.com" or parsed.hostname.endswith(".github.com")) and len(path_parts) >= 2:
+        if (
+            parsed.hostname
+            and (
+                parsed.hostname == "github.com"
+                or parsed.hostname.endswith(".github.com")
+            )
+            and len(path_parts) >= 2
+        ):
             return path_parts[0], path_parts[1].replace(".git", "")
         if len(path_parts) == 2:
             return path_parts[0], path_parts[1].replace(".git", "")
