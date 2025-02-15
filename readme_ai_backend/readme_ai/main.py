@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from readme_ai.agents.repo_analyzer import RepoAnalyzerAgent
 from readme_ai.agents.readme_agent import ReadmeCompilerAgent
 from readme_ai.models.template import Template
+from readme_ai.repositories.readme_repository import ReadmeRepository
 from readme_ai.settings import get_settings, MissingEnvironmentVariable
 from dotenv import load_dotenv
 from hypercorn.config import Config
@@ -23,6 +24,7 @@ from fastapi.responses import JSONResponse
 from readme_ai.repositories.template_repository import TemplateRepository
 from readme_ai.services.template_service import TemplateService
 from readme_ai.services.miniio_service import MinioService, get_minio_service
+from readme_ai.services.readme_service import ReadmeService
 from readme_ai.models.responses.template import TemplatesResponse, TemplateResponse
 from readme_ai.logging_config import logger
 from readme_ai.database import get_db
@@ -35,7 +37,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from readme_ai.auth import AuthenticationError  # type: ignore
-from sse_starlette.sse import EventSourceResponse
+from sse_starlette.sse import EventSourceResponse  # type: ignore
 
 import json
 
@@ -138,6 +140,8 @@ async def generate_readme(
     repo_analyzer = RepoAnalyzerAgent(github_token=github_token)
     readme_compiler = ReadmeCompilerAgent()
 
+    user = request.state.user
+
     async def event_generator():
         timestamp = datetime.now().isoformat()
 
@@ -234,6 +238,29 @@ async def generate_readme(
                     }
                 ),
             }
+
+            first_line = next(
+                (
+                    line.strip()
+                    for line in readme_content["readme"].splitlines()
+                    if line.strip().startswith("#")
+                ),
+                "",
+            )
+
+            header = first_line.lstrip("#").strip()
+
+            readme_repository = ReadmeRepository(db_session=db)
+
+            readme_service = ReadmeService(readme_repository=readme_repository)
+
+            readme = await readme_service.create_readme(
+                user_id=user.get_user_id(), repository_url=repo_url, title=header
+            )
+
+            await readme_service.create_version(
+                readme_id=readme.id, content=readme_content["readme"]
+            )
 
         except Exception as e:
             logger.error(f"README generation error: {str(e)}")

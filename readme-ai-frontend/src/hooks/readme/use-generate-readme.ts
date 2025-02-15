@@ -26,6 +26,9 @@ export const useGenerateReadme = () => {
             ...(params.template_id && {
               template_id: params.template_id.toString(),
             }),
+            ...(params.title && {
+              title: params.title,
+            }),
             token,
           })}`,
         );

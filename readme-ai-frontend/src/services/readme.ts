@@ -5,6 +5,7 @@ export interface RepoRequestParams {
   repo_url: string;
   branch?: string;
   template_id?: number;
+  title?: string;
 }
 
 export interface HealthCheckResponse {
@@ -12,9 +13,9 @@ export interface HealthCheckResponse {
   version: string;
   services: {
     analyzer: boolean;
-    compiler: boolean;
-  };
+    compiler: boolean
 }
+};
 
 export interface ApiErrorResponse {
   status: "error";

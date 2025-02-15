@@ -17,7 +17,7 @@ class ImprovedReadmeState(TypedDict):
 class ReadmeImproverAgent:
     def __init__(self, model: str):
         logger.info("Initializing ReadmeImproverAgent")
-        self.llm = ChatGroq(model, temperature=0.1)
+        self.llm = ChatGroq(model=model, temperature=0.1)
         self.graph = self._build_improvement_graph()
         logger.info("ReadmeImproverAgent initialized successfully")
 
@@ -41,13 +41,13 @@ class ReadmeImproverAgent:
         print("\n=== PLANNING README IMPROVEMENTS ===")
 
         prompt = f"""Given the following README content and improvement request, create a strategic plan for enhancing it:
-        
+
         CURRENT README:
         {state["current_markdown"]}
-        
+
         IMPROVEMENT REQUEST:
         {state["feedback"]}
-        
+
         Create a detailed plan outlining specific improvements while preserving valuable existing content."""
 
         result = await self.llm.ainvoke(prompt)
@@ -63,13 +63,13 @@ class ReadmeImproverAgent:
 
         prompt = f"""Following this improvement plan:
         {state["plan"]}
-        
+
         Enhance this README while maintaining its core structure:
         {state["current_markdown"]}
-        
+
         Apply the requested improvements:
         {state["feedback"]}
-        
+
         Generate an improved version that incorporates all enhancements while preserving valuable existing content."""
 
         result = await self.llm.ainvoke(prompt)
