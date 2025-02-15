@@ -5,7 +5,7 @@ import BlockEditor from "@/components/template-editor/block-editor";
 import RawEditor from "@/components/template-editor/raw-editor";
 import { useTemplate, useUpdateTemplate } from "@/hooks/readme/use-templates";
 import { useNavigate } from "@tanstack/react-router";
-import { ApiError } from "@/services/readme";
+import { ApiError } from "@/services/utils";
 import {
   type BlockContent,
   parseMarkdownToBlocks,

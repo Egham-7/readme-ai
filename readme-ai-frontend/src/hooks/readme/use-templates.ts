@@ -5,9 +5,9 @@ import type {
   CreateTemplatePayload,
   UpdateTemplatePayload,
   TemplatesResponse,
-} from "@/services/readme";
-import { ApiError } from "@/services/readme";
-import { readmeService } from "@/services/readme";
+} from "@/services/templates";
+import { ApiError } from "@/services/utils";
+import templateService from "@/services/templates";
 
 export const useTemplates = (page = 1, pageSize = 10) => {
   const { getToken } = useAuth();
@@ -18,7 +18,7 @@ export const useTemplates = (page = 1, pageSize = 10) => {
       const token = await getToken();
       if (!token)
         throw new ApiError("Authentication required", "AUTH_REQUIRED");
-      return readmeService.getAllTemplates(token, page, pageSize);
+      return templateService.getAllTemplates(token, page, pageSize);
     },
   });
 };
@@ -32,7 +32,7 @@ export const useTemplate = (id: number) => {
       const token = await getToken();
       if (!token)
         throw new ApiError("Authentication required", "AUTH_REQUIRED");
-      return readmeService.getTemplate(id, token);
+      return templateService.getTemplate(id, token);
     },
   });
 };
@@ -46,7 +46,7 @@ export const useCreateTemplate = () => {
       const token = await getToken();
       if (!token)
         throw new ApiError("Authentication required", "AUTH_REQUIRED");
-      return readmeService.createTemplate(payload, token);
+      return templateService.createTemplate(payload, token);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["templates"] });
@@ -70,7 +70,7 @@ export const useUpdateTemplate = () => {
       const token = await getToken();
       if (!token)
         throw new ApiError("Authentication required", "AUTH_REQUIRED");
-      return readmeService.updateTemplate(id, payload, token);
+      return templateService.updateTemplate(id, payload, token);
     },
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({ queryKey: ["templates"] });
@@ -90,7 +90,7 @@ export const useDeleteTemplate = () => {
       const token = await getToken();
       if (!token)
         throw new ApiError("Authentication required", "AUTH_REQUIRED");
-      return readmeService.deleteTemplate(id, token);
+      return templateService.deleteTemplate(id, token);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["templates"] });
@@ -108,7 +108,7 @@ export const useUserTemplates = (page = 1, pageSize = 10) => {
       if (!token)
         throw new ApiError("Authentication required", "AUTH_REQUIRED");
       if (!userId) throw new ApiError("User ID required", "USER_ID_REQUIRED");
-      return readmeService.getUserTemplates(userId, token, page, pageSize);
+      return templateService.getUserTemplates(userId, token, page, pageSize);
     },
     enabled: !!userId,
   });

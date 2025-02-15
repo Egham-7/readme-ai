@@ -1,12 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import { useAuth } from "@clerk/clerk-react";
-import {
-  API_BASE_URL,
-  ApiError,
-  type ProgressUpdate,
-  type RepoRequestParams,
-} from "@/services/readme";
+import { API_BASE_URL, ApiError } from "@/services/utils";
+import { type RepoRequestParams, type ProgressUpdate } from "@/services/readme";
 
 export const useGenerateReadme = () => {
   const { getToken } = useAuth();

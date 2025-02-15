@@ -27,7 +27,7 @@ class ChatMessage(ChatMessageBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ReadmeVersionBase(BaseModel):
@@ -41,7 +41,7 @@ class ReadmeVersion(ReadmeVersionBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ReadmeBase(BaseModel):
@@ -58,4 +58,4 @@ class Readme(ReadmeBase):
     chat_messages: List[ChatMessage]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
