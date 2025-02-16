@@ -22,4 +22,3 @@ async def root(request: Request):
             "compiler": True,
         },
     }
-

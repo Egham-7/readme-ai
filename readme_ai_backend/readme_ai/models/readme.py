@@ -1,9 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, func
-from sqlalchemy.orm import relationship, DeclarativeBase
-
-
-class Base(DeclarativeBase):
-    pass
+from sqlalchemy.orm import relationship
+from readme_ai.models.base import Base
 
 
 class Readme(Base):
@@ -16,7 +13,6 @@ class Readme(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Relationships
     versions = relationship(
         "ReadmeVersion", back_populates="readme", cascade="all, delete-orphan"
     )
@@ -34,8 +30,8 @@ class ReadmeVersion(Base):
     content = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Relationships
     readme = relationship("Readme", back_populates="versions")
+    chat_message = relationship("ChatMessage", back_populates="version", uselist=False)
 
 
 class ChatMessage(Base):
@@ -43,9 +39,10 @@ class ChatMessage(Base):
 
     id = Column(Integer, primary_key=True)
     readme_id = Column(Integer, ForeignKey("readmes.id"), nullable=False)
+    readme_version_id = Column(Integer, ForeignKey("readme_versions.id"), nullable=True)
     role = Column(String, nullable=False)  # 'user' or 'assistant'
     content = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Relationships
     readme = relationship("Readme", back_populates="chat_messages")
+    version = relationship("ReadmeVersion", back_populates="chat_message")

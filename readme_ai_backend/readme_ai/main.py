@@ -13,7 +13,7 @@ from readme_ai.models.requests.readme import ErrorResponse
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
+from slowapi.errors import RateLimitExceeded  # type: ignore
 from fastapi.responses import JSONResponse
 
 from readme_ai.handlers import health, readme, templates
@@ -75,8 +75,6 @@ async def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
             error_code="RATE_LIMIT_EXCEEDED",
             details={
                 "limit": str(exc.limit),
-                "reset_at": exc.reset_at.isoformat() if exc.reset_at else None,
-                "retry_after": exc.retry_after,
             },
             timestamp=datetime.now().isoformat(),
         ).dict(),
@@ -89,7 +87,7 @@ app.include_router(readme.router)
 app.include_router(templates.router)
 
 # Register rate limit handler
-app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
+app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)  # type:ignore
 
 
 # Startup and shutdown events
@@ -108,5 +106,4 @@ if __name__ == "__main__":
     config = Config()
     config.bind = [f"{settings.HOST}:{settings.PORT}"]
     config.worker_class = "asyncio"
-    asyncio.run(serve(app, config))
-
+    asyncio.run(serve(app, config))  # type: ignore

@@ -1,10 +1,13 @@
+# ruff: noqa: F401
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
-from readme_ai.models.template import Base
-from readme_ai.settings import get_settings
 
+from readme_ai.models.base import Base
+from readme_ai.models.readme import Readme, ReadmeVersion, ChatMessage
+from readme_ai.models.template import Template
+from readme_ai.settings import get_settings
 
 config = context.config
 settings = get_settings()
@@ -14,7 +17,6 @@ db_url = settings.DATABASE_URL
 config.set_main_option(
     "sqlalchemy.url", str(db_url).replace("postgresql+asyncpg", "postgresql")
 )
-
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

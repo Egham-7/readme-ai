@@ -60,8 +60,7 @@ async def create_template(
             content=ErrorResponse(
                 message="Internal server error during template creation.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(
-                    e).__name__, "error_message": str(e)},
+                details={"error_type": type(e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
@@ -99,8 +98,7 @@ async def get_template(
             content=ErrorResponse(
                 message="Internal server error while retrieving template.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(
-                    e).__name__, "error_message": str(e)},
+                details={"error_type": type(e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
@@ -138,8 +136,7 @@ async def get_user_templates(
             content=ErrorResponse(
                 message="Internal server error while retrieving user templates.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(
-                    e).__name__, "error_message": str(e)},
+                details={"error_type": type(e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
@@ -171,8 +168,7 @@ async def get_all_templates(
             content=ErrorResponse(
                 message="Internal server error while retrieving templates.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(
-                    e).__name__, "error_message": str(e)},
+                details={"error_type": type(e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
@@ -216,8 +212,7 @@ async def update_template(
             content=ErrorResponse(
                 message="Internal server error while updating template.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(
-                    e).__name__, "error_message": str(e)},
+                details={"error_type": type(e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
@@ -253,8 +248,7 @@ async def delete_template(
             content=ErrorResponse(
                 message="Internal server error while deleting template.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(
-                    e).__name__, "error_message": str(e)},
+                details={"error_type": type(e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )

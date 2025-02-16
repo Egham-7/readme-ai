@@ -13,7 +13,8 @@ class ReadmeRepository:
     async def create_readme(
         self, user_id: str, repository_url: str, title: str
     ) -> Readme:
-        readme = Readme(user_id=user_id, repository_url=repository_url, title=title)
+        readme = Readme(user_id=user_id,
+                        repository_url=repository_url, title=title)
         self.db_session.add(readme)
         await self.db_session.commit()
         return readme
@@ -30,28 +31,34 @@ class ReadmeRepository:
             .where(Readme.id == readme_id)
         )
         result = await self.db_session.execute(query)
-        return result.scalar_one_or_none()
+        return result.unique().scalars().first()
 
     async def get_user_readmes(
         self, user_id: str, page: int = 1, page_size: int = 10
     ) -> Tuple[List[Readme], int]:
-        base_query = (
-            select(Readme)
-            .options(joinedload(Readme.versions))
-            .where(Readme.user_id == user_id)
+        # Count total readmes
+        count_query = select(func.count(Readme.id.distinct())).where(
+            Readme.user_id == user_id
         )
-
-        # Fix the select_from issue by using the correct table
-        count_query = select(func.count()).select_from(Readme)
         total = await self.db_session.execute(count_query)
         total_count = cast(int, total.scalar() or 0)
 
-        query = base_query.offset((page - 1) * page_size).limit(page_size)
+        # Get paginated readmes with versions
+        query = (
+            select(Readme)
+            .distinct()
+            .options(joinedload(Readme.versions), joinedload(Readme.chat_messages))
+            .where(Readme.user_id == user_id)
+            .order_by(Readme.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+
         result = await self.db_session.execute(query)
-        readmes = list(result.scalars().all())  # Convert to list explicitly
+        readmes = result.unique().scalars().all()
 
         total_pages = (total_count + page_size - 1) // page_size
-        return readmes, total_pages
+        return list(readmes), total_pages
 
     async def create_version(self, readme_id: int, content: str) -> ReadmeVersion:
         # Get the latest version number
@@ -75,3 +82,23 @@ class ReadmeRepository:
             await self.db_session.commit()
             return True
         return False
+
+    async def update_version(
+        self, version_id: int, content: str
+    ) -> Optional[ReadmeVersion]:
+        # First, get the version without eager loading
+        stmt = (
+            select(ReadmeVersion)
+            .where(ReadmeVersion.id == version_id)
+            .options(joinedload(ReadmeVersion.readme))
+        )
+        result = await self.db_session.execute(stmt)
+        version = result.scalars().first()
+
+        if version:
+            version.content = content
+            await self.db_session.commit()
+            await self.db_session.refresh(version)
+            return version
+
+        return None

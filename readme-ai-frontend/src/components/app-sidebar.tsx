@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Files, Home } from "lucide-react";
+import { FileEditIcon, Files, Home } from "lucide-react";
 import { NavMain } from "@/components/nav-main";
 import {
   Sidebar,
@@ -18,20 +18,11 @@ const navigationItems = [
     icon: Home,
     isActive: true,
   },
+
   {
-    title: "Templates",
-    url: "/templates",
-    icon: Files,
-    items: [
-      {
-        title: "Featured",
-        url: "/templates/featured",
-      },
-      {
-        title: "Community",
-        url: "/templates/community",
-      },
-    ],
+    icon: FileEditIcon,
+    title: "READMEs",
+    url: "/readmes/",
   },
 ];
 

@@ -36,3 +36,25 @@ class ReadmeService:
         if readme.user_id != user_id:
             raise ValueError("Not authorized to delete this readme")
         return await self.repository.delete_readme(readme_id)
+
+    async def update_readme(
+        self, readme_id: int, user_id: str, content: str
+    ) -> Optional[ReadmeVersion]:
+        readme = await self.repository.get_readme_with_versions(readme_id)
+
+        if not readme:
+            raise ValueError("Readme not found")
+
+        if readme.user_id != user_id:
+            raise ValueError("Not authorized to update this readme")
+
+        latest_version = (
+            max(readme.versions, key=lambda v: v.version_number)
+            if readme.versions
+            else None
+        )
+
+        if latest_version:
+            return await self.repository.update_version(latest_version.id, content)
+        else:
+            return await self.repository.create_version(readme_id, content)

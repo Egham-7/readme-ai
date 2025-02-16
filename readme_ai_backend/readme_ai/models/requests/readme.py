@@ -23,8 +23,8 @@ class ChatMessageCreate(ChatMessageBase):
 class ChatMessage(ChatMessageBase):
     id: int
     readme_id: int
-    readme_version_id: int
     created_at: datetime
+    readme_version_id: Optional[int]
 
     class Config:
         from_attributes = True
@@ -59,3 +59,7 @@ class Readme(ReadmeBase):
 
     class Config:
         from_attributes = True
+
+
+class ReadmeUpdate(BaseModel):
+    content: str
