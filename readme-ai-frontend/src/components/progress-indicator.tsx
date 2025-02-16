@@ -1,8 +1,8 @@
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { ProgressUpdate } from "@/services/readme";
 import { CheckCircle, Circle, CircleDot, XCircle } from "lucide-react";
+import { type ProgressUpdate } from "@/services/readme";
 
 interface ProgressIndicatorProps {
   progress: ProgressUpdate | null;

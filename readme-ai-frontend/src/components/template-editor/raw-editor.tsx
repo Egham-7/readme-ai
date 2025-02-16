@@ -2,16 +2,21 @@ import { Button } from "../ui/button";
 import { useState } from "react";
 import { Textarea } from "../ui/textarea";
 import MarkdownPreview from "../markdown-preview";
+import { SaveDialog } from "./preview/save-dialog";
 
 function RawEditor({
   onSave,
   markdown,
 }: {
-  onSave: (markdown: string) => void;
+  onSave: (markdown: string, title: string) => void;
   markdown?: string;
 }) {
   const [rawMarkdown, setRawMarkdown] = useState(markdown ?? "");
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
+
+  const handleSave = (title: string) => {
+    onSave(rawMarkdown, title);
+  };
 
   return (
     <div className="h-full flex flex-col bg-background">
@@ -22,7 +27,7 @@ function RawEditor({
         >
           {isPreviewVisible ? "Show Editor" : "Show Preview"}
         </Button>
-        <Button onClick={() => onSave(rawMarkdown)}>Save Template</Button>
+        <SaveDialog onSave={handleSave} />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 p-4">
         <Textarea

@@ -1,5 +1,4 @@
-import type { ApiError } from "@/services/readme";
-import { getErrorAction } from "@/services/readme";
+import { getErrorAction } from "@/services/templates";
 import { Tabs, TabsList, TabsContent, TabsTrigger } from "../ui/tabs";
 import {
   Card,
@@ -13,6 +12,7 @@ import ErrorDisplay from "./error-display";
 import { RefreshCw, Check, Copy } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import MarkdownPreview from "../markdown-preview";
+import { type ApiError } from "@/services/utils";
 
 interface MarkdownResultProps {
   markdown?: string;

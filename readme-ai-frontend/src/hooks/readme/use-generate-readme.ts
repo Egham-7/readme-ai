@@ -1,17 +1,14 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import { useAuth } from "@clerk/clerk-react";
-import {
-  API_BASE_URL,
-  ApiError,
-  type ProgressUpdate,
-  type RepoRequestParams,
-} from "@/services/readme";
+import { API_BASE_URL, ApiError } from "@/services/utils";
+import { type RepoRequestParams, type ProgressUpdate } from "@/services/readme";
 
 export const useGenerateReadme = () => {
   const { getToken } = useAuth();
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const queryClient = useQueryClient();
 
   const mutation = useMutation<string, ApiError, RepoRequestParams>({
     mutationFn: async (params: RepoRequestParams) => {
@@ -25,6 +22,9 @@ export const useGenerateReadme = () => {
             repo_url: params.repo_url,
             ...(params.template_id && {
               template_id: params.template_id.toString(),
+            }),
+            ...(params.title && {
+              title: params.title,
             }),
             token,
           })}`,
@@ -63,6 +63,10 @@ export const useGenerateReadme = () => {
           eventSourceRef.current = null;
         });
       });
+    },
+
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["readmes"] });
     },
   });
 

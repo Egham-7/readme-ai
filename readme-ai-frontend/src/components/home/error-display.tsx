@@ -1,7 +1,7 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { ApiError } from "@/services/readme";
 import { AlertCircle } from "lucide-react";
-import { getErrorMessage } from "@/services/readme";
+import { getErrorMessage } from "@/services/templates";
+import { type ApiError } from "@/services/utils";
 
 interface ErrorDisplayProps {
   error: ApiError;

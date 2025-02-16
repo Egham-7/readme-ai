@@ -3,9 +3,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import BlockEditor from "@/components/template-editor/block-editor";
 import RawEditor from "@/components/template-editor/raw-editor";
-import { useCreateTemplate } from "@/hooks/readme/use-templates";
+import { useCreateTemplate } from "@/hooks/templates/use-create-template";
 import { useNavigate } from "@tanstack/react-router";
-import { ApiError } from "@/services/readme";
+import { ApiError } from "@/services/utils";
 import { type BlockContent } from "@/components/template-editor/markdown-blocks";
 
 type EditorMode = "blocks" | "raw";
@@ -19,10 +19,11 @@ function CreateTemplate() {
   const { mutateAsync: createTemplate } = useCreateTemplate();
   const navigate = useNavigate();
 
-  const handleSave = async (markdown: string) => {
+  const handleSave = async (markdown: string, title: string) => {
     try {
       await createTemplate({
         content: markdown,
+        title,
       });
       toast({
         title: "Template Saved",
@@ -45,7 +46,6 @@ function CreateTemplate() {
   };
   const handleBlocksChange = (newBlocks: BlockContent[]) => {
     setBlocks(newBlocks);
-    // Add any additional logic needed when blocks change
   };
 
   return (

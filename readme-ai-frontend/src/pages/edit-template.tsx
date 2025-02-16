@@ -3,9 +3,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import BlockEditor from "@/components/template-editor/block-editor";
 import RawEditor from "@/components/template-editor/raw-editor";
-import { useTemplate, useUpdateTemplate } from "@/hooks/readme/use-templates";
+import { useTemplate } from "@/hooks/templates/use-template";
+import { useUpdateTemplate } from "@/hooks/templates/use-update-template";
 import { useNavigate } from "@tanstack/react-router";
-import { ApiError } from "@/services/readme";
+import { ApiError } from "@/services/utils";
 import {
   type BlockContent,
   parseMarkdownToBlocks,
@@ -33,12 +34,13 @@ function EditTemplate() {
     }
   }, [template]);
 
-  const handleSave = async (markdown: string) => {
+  const handleSave = async (markdown: string, title: string) => {
     try {
       await updateTemplate({
         id: Number(templateId),
         payload: {
           content: markdown,
+          title,
         },
       });
 

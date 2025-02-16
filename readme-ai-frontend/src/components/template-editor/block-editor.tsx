@@ -12,7 +12,7 @@ function BlockEditor({
   blocks,
   onBlocksChange,
 }: {
-  onSave: (markdown: string) => void;
+  onSave: (markdown: string, title: string) => void;
   blocks: BlockContent[];
   onBlocksChange: (blocks: BlockContent[]) => void;
 }) {

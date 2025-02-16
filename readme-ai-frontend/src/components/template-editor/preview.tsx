@@ -17,12 +17,13 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "../ui/textarea";
 import { type BlockContent } from "./markdown-blocks";
+import { SaveDialog } from "./preview/save-dialog";
 
 interface PreviewProps {
   blocks: BlockContent[];
   onBlocksChange: (blocks: BlockContent[]) => void;
 
-  onSave: (markdown: string) => void;
+  onSave: (markdown: string, title: string) => void;
 }
 
 interface SortableBlockProps {
@@ -275,6 +276,10 @@ export default function Preview({
     });
   };
 
+  const handleSave = (title: string) => {
+    onSave(getAllMarkdownContent(), title);
+  };
+
   return (
     <>
       <div className="flex-1 p-2 lg:p-3 bg-background">
@@ -308,13 +313,8 @@ export default function Preview({
                   >
                     Preview
                   </Button>
-                  <Button
-                    onClick={() => onSave(getAllMarkdownContent())}
-                    variant="default"
-                    className="flex-1 lg:flex-none"
-                  >
-                    Save
-                  </Button>
+
+                  <SaveDialog onSave={handleSave} />
                 </div>
               </div>
             </div>

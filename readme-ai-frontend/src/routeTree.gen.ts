@@ -15,6 +15,7 @@ import { Route as HomeImport } from "./routes/_home"
 import { Route as IndexImport } from "./routes/index"
 import { Route as HomeHomeImport } from "./routes/_home/home"
 import { Route as HomeTemplatesIndexImport } from "./routes/_home/templates/index"
+import { Route as HomeReadmesIndexImport } from "./routes/_home/readmes/index"
 import { Route as HomeTemplatesCreateIndexImport } from "./routes/_home/templates/create/index"
 import { Route as HomeTemplatesUpdateTemplateIdImport } from "./routes/_home/templates/update/$templateId"
 
@@ -40,6 +41,12 @@ const HomeHomeRoute = HomeHomeImport.update({
 const HomeTemplatesIndexRoute = HomeTemplatesIndexImport.update({
   id: "/templates/",
   path: "/templates/",
+  getParentRoute: () => HomeRoute,
+} as any)
+
+const HomeReadmesIndexRoute = HomeReadmesIndexImport.update({
+  id: "/readmes/",
+  path: "/readmes/",
   getParentRoute: () => HomeRoute,
 } as any)
 
@@ -81,6 +88,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof HomeHomeImport
       parentRoute: typeof HomeImport
     }
+    "/_home/readmes/": {
+      id: "/_home/readmes/"
+      path: "/readmes"
+      fullPath: "/readmes"
+      preLoaderRoute: typeof HomeReadmesIndexImport
+      parentRoute: typeof HomeImport
+    }
     "/_home/templates/": {
       id: "/_home/templates/"
       path: "/templates"
@@ -109,6 +123,7 @@ declare module "@tanstack/react-router" {
 
 interface HomeRouteChildren {
   HomeHomeRoute: typeof HomeHomeRoute
+  HomeReadmesIndexRoute: typeof HomeReadmesIndexRoute
   HomeTemplatesIndexRoute: typeof HomeTemplatesIndexRoute
   HomeTemplatesUpdateTemplateIdRoute: typeof HomeTemplatesUpdateTemplateIdRoute
   HomeTemplatesCreateIndexRoute: typeof HomeTemplatesCreateIndexRoute
@@ -116,6 +131,7 @@ interface HomeRouteChildren {
 
 const HomeRouteChildren: HomeRouteChildren = {
   HomeHomeRoute: HomeHomeRoute,
+  HomeReadmesIndexRoute: HomeReadmesIndexRoute,
   HomeTemplatesIndexRoute: HomeTemplatesIndexRoute,
   HomeTemplatesUpdateTemplateIdRoute: HomeTemplatesUpdateTemplateIdRoute,
   HomeTemplatesCreateIndexRoute: HomeTemplatesCreateIndexRoute,
@@ -127,6 +143,7 @@ export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
   "": typeof HomeRouteWithChildren
   "/home": typeof HomeHomeRoute
+  "/readmes": typeof HomeReadmesIndexRoute
   "/templates": typeof HomeTemplatesIndexRoute
   "/templates/update/$templateId": typeof HomeTemplatesUpdateTemplateIdRoute
   "/templates/create": typeof HomeTemplatesCreateIndexRoute
@@ -136,6 +153,7 @@ export interface FileRoutesByTo {
   "/": typeof IndexRoute
   "": typeof HomeRouteWithChildren
   "/home": typeof HomeHomeRoute
+  "/readmes": typeof HomeReadmesIndexRoute
   "/templates": typeof HomeTemplatesIndexRoute
   "/templates/update/$templateId": typeof HomeTemplatesUpdateTemplateIdRoute
   "/templates/create": typeof HomeTemplatesCreateIndexRoute
@@ -146,6 +164,7 @@ export interface FileRoutesById {
   "/": typeof IndexRoute
   "/_home": typeof HomeRouteWithChildren
   "/_home/home": typeof HomeHomeRoute
+  "/_home/readmes/": typeof HomeReadmesIndexRoute
   "/_home/templates/": typeof HomeTemplatesIndexRoute
   "/_home/templates/update/$templateId": typeof HomeTemplatesUpdateTemplateIdRoute
   "/_home/templates/create/": typeof HomeTemplatesCreateIndexRoute
@@ -157,6 +176,7 @@ export interface FileRouteTypes {
     | "/"
     | ""
     | "/home"
+    | "/readmes"
     | "/templates"
     | "/templates/update/$templateId"
     | "/templates/create"
@@ -165,6 +185,7 @@ export interface FileRouteTypes {
     | "/"
     | ""
     | "/home"
+    | "/readmes"
     | "/templates"
     | "/templates/update/$templateId"
     | "/templates/create"
@@ -173,6 +194,7 @@ export interface FileRouteTypes {
     | "/"
     | "/_home"
     | "/_home/home"
+    | "/_home/readmes/"
     | "/_home/templates/"
     | "/_home/templates/update/$templateId"
     | "/_home/templates/create/"
@@ -210,6 +232,7 @@ export const routeTree = rootRoute
       "filePath": "_home.tsx",
       "children": [
         "/_home/home",
+        "/_home/readmes/",
         "/_home/templates/",
         "/_home/templates/update/$templateId",
         "/_home/templates/create/"
@@ -217,6 +240,10 @@ export const routeTree = rootRoute
     },
     "/_home/home": {
       "filePath": "_home/home.tsx",
+      "parent": "/_home"
+    },
+    "/_home/readmes/": {
+      "filePath": "_home/readmes/index.tsx",
       "parent": "/_home"
     },
     "/_home/templates/": {
