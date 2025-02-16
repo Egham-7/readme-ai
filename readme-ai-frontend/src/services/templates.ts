@@ -2,6 +2,7 @@ import { ApiError, type ApiErrorResponse, API_BASE_URL } from "./utils";
 
 export interface Template {
   id: number;
+  title: string;
   content: string;
   preview_url?: string;
   featured: boolean;
@@ -9,11 +10,13 @@ export interface Template {
 }
 
 export interface CreateTemplatePayload {
+  title: string;
   content: string;
   preview_file?: File;
 }
 
 export interface UpdateTemplatePayload {
+  title?: string;
   content?: string;
   preview_file?: File;
 }
@@ -102,6 +105,7 @@ export const templateService = {
     token: string,
   ): Promise<Template> => {
     const formData = new FormData();
+    formData.append("title", payload.title);
     formData.append("content", payload.content);
     if (payload.preview_file) {
       formData.append("preview_file", payload.preview_file);
@@ -132,6 +136,9 @@ export const templateService = {
     token: string,
   ): Promise<Template> => {
     const formData = new FormData();
+    if (payload.title) {
+      formData.append("title", payload.title);
+    }
     if (payload.content) {
       formData.append("content", payload.content);
     }

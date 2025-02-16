@@ -105,7 +105,7 @@ const TemplateCard = ({
       <Card className="group hover:border-primary/50 transition-colors w-full">
         <CardHeader className="p-3 md:p-6">
           <CardTitle className="text-base md:text-lg flex items-center justify-between">
-            Template {template.id}
+            {template.title}
           </CardTitle>
           <CardDescription className="text-sm line-clamp-2 mt-1">
             {template.content.substring(0, 100)}...
@@ -132,7 +132,7 @@ const TemplateCard = ({
       <PreviewModal open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
         <ModalContent className={`${isMobile ? "px-4" : "max-w-4xl"}`}>
           <ModalHeader>
-            <DialogTitle>Template {template.id}</DialogTitle>
+            <DialogTitle>Template {template.title}</DialogTitle>
           </ModalHeader>
           {previewContent}
           <ModalFooter>{previewActions}</ModalFooter>

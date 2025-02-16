@@ -1,6 +1,6 @@
 import { TrashIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useDeleteTemplate } from "@/hooks/readme/use-templates";
+import { useDeleteTemplate } from "@/hooks/templates/use-delete-template";
 import { useToast } from "@/hooks/use-toast";
 import { ApiError } from "@/services/utils";
 import { type Template } from "@/services/templates";

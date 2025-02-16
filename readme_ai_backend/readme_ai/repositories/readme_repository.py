@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
 from typing import List, Optional, Tuple, cast
+from sqlalchemy.sql.expression import Update
 
 from readme_ai.models.readme import Readme, ReadmeVersion
 
@@ -13,8 +14,7 @@ class ReadmeRepository:
     async def create_readme(
         self, user_id: str, repository_url: str, title: str
     ) -> Readme:
-        readme = Readme(user_id=user_id,
-                        repository_url=repository_url, title=title)
+        readme = Readme(user_id=user_id, repository_url=repository_url, title=title)
         self.db_session.add(readme)
         await self.db_session.commit()
         return readme
@@ -86,19 +86,14 @@ class ReadmeRepository:
     async def update_version(
         self, version_id: int, content: str
     ) -> Optional[ReadmeVersion]:
-        # First, get the version without eager loading
         stmt = (
-            select(ReadmeVersion)
+            Update(ReadmeVersion)
             .where(ReadmeVersion.id == version_id)
-            .options(joinedload(ReadmeVersion.readme))
+            .values(content=content)
+            .returning(ReadmeVersion)
         )
+
         result = await self.db_session.execute(stmt)
-        version = result.scalars().first()
+        await self.db_session.commit()
 
-        if version:
-            version.content = content
-            await self.db_session.commit()
-            await self.db_session.refresh(version)
-            return version
-
-        return None
+        return result.scalar_one_or_none()

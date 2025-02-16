@@ -8,13 +8,14 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { useTemplates, useUserTemplates } from "@/hooks/readme/use-templates";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import ErrorDisplay from "./error-display";
 import TemplatesContentSkeleton from "./skeletons/template-content-skeleton";
 import TemplateGrid from "./templates/template-grid";
 import { SearchHeader } from "../search-header";
+import { useTemplates } from "@/hooks/templates/use-templates";
+import { useUserTemplates } from "@/hooks/templates/use-user-template";
 
 const CommunityTemplatesContent = ({
   onSelect,

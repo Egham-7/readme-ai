@@ -16,6 +16,7 @@ class TemplateService:
 
     async def create_template(
         self,
+        title: str,
         content: str,
         user_id: str,
         preview_image: Optional[bytes] = None,
@@ -28,11 +29,48 @@ class TemplateService:
                     image_stream, "image/png"
                 )
             return await self.repository.create(
-                content=content, user_id=user_id, preview_image=preview_file_name
+                title=title,
+                content=content,
+                user_id=user_id,
+                preview_image=preview_file_name,
             )
         except Exception as e:
             raise Exception(f"Failed to create template: {str(e)}")
 
+    async def update_template(
+        self,
+        template_id: int,
+        title: str,
+        content: str,
+        preview_image: Optional[bytes] = None,
+    ) -> Template:
+        template = await self.repository.get_by_id(template_id)
+        if not template:
+            raise Exception(f"Template with id {template_id} not found")
+
+        try:
+            if preview_image:
+                if template.preview_image:
+                    self.minio_service.delete_file(template.preview_image)
+                image_stream = io.BytesIO(preview_image)
+                preview_file_name = self.minio_service.upload_file(
+                    image_stream, "image/png"
+                )
+                template_with_image = await self.repository.update(
+                    template_id, title, content, preview_file_name
+                )
+                if not template_with_image:
+                    raise Exception(f"Failed to update template with id {template_id}")
+                return template_with_image
+
+            template = await self.repository.update(template_id, title, content)
+            if not template:
+                raise Exception(f"Failed to update template with id {template_id}")
+            return template
+        except Exception as e:
+            raise Exception(f"Failed to update template: {str(e)}")
+
+    # Other methods remain unchanged
     async def get_template(self, template_id: int) -> Optional[Template]:
         template = await self.repository.get_by_id(template_id)
         if not template:
@@ -54,7 +92,6 @@ class TemplateService:
             templates = await self.repository.get_all(page=page, page_size=page_size)
             total_count = await self.repository.get_total_count()
             total_pages = math.ceil(total_count / page_size)
-
             for template in templates:
                 if not template.preview_image:
                     continue
@@ -64,34 +101,6 @@ class TemplateService:
             return templates, total_pages
         except Exception as e:
             raise Exception(f"Failed to fetch templates: {str(e)}")
-
-    async def update_template(
-        self, template_id: int, content: str, preview_image: Optional[bytes] = None
-    ) -> Template:
-        template = await self.repository.get_by_id(template_id)
-        if not template:
-            raise Exception(f"Template with id {template_id} not found")
-        try:
-            if preview_image:
-                if template.preview_image:
-                    self.minio_service.delete_file(template.preview_image)
-                image_stream = io.BytesIO(preview_image)
-                preview_file_name = self.minio_service.upload_file(
-                    image_stream, "image/png"
-                )
-                template_with_image = await self.repository.update(
-                    template_id, content, preview_file_name
-                )
-                if not template_with_image:
-                    raise Exception(f"Failed to update template with id {template_id}")
-                return template_with_image
-
-            template = await self.repository.update(template_id, content)
-            if not template:
-                raise Exception(f"Failed to update template with id {template_id}")
-            return template
-        except Exception as e:
-            raise Exception(f"Failed to update template: {str(e)}")
 
     async def delete_template(self, template_id: int) -> bool:
         template = await self.repository.get_by_id(template_id)
@@ -113,7 +122,6 @@ class TemplateService:
             )
             total_count = await self.repository.get_total_count_by_user_id(user_id)
             total_pages = math.ceil(total_count / page_size)
-
             for template in templates:
                 if template.preview_image:
                     template.preview_url = self.minio_service.get_file_url(

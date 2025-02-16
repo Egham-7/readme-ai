@@ -27,45 +27,6 @@ router = APIRouter(prefix="/templates", tags=["templates"])
 limiter = Limiter(key_func=get_remote_address)
 
 
-@router.post("/", response_model=TemplateResponse, status_code=status.HTTP_201_CREATED)
-@limiter.limit("10/minute")
-@require_auth()
-async def create_template(
-    request: Request,
-    content: str = Form(...),
-    preview_file: UploadFile = Form(None),
-    db: AsyncSession = Depends(get_db),
-    minio_service: MinioService = Depends(get_minio_service),
-):
-    timestamp = datetime.now().isoformat()
-    user: ClerkUser = request.state.user
-    try:
-        preview_image_bytes = await preview_file.read() if preview_file else None
-        repository = TemplateRepository(db)
-        service = TemplateService(repository, minio_service)
-        template = await service.create_template(
-            content=content,
-            user_id=user.get_user_id(),
-            preview_image=preview_image_bytes,
-        )
-        template_dict = template.to_dict()
-        logger.info(f"Template Dict: {template_dict}")
-        template_response = TemplateResponse(**template_dict)
-        logger.info(f"Template Response: {template_response}")
-        return template_response
-    except Exception as e:
-        logger.error(f"Template creation error: {str(e)}")
-        return JSONResponse(
-            status_code=500,
-            content=ErrorResponse(
-                message="Internal server error during template creation.",
-                error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
-                timestamp=timestamp,
-            ).dict(),
-        )
-
-
 @router.get("/{template_id}", response_model=TemplateResponse)
 @limiter.limit("20/minute")
 @require_auth()
@@ -85,8 +46,9 @@ async def get_template(
             raise HTTPException(status_code=404, detail="Template not found")
         if template.user_id != user.get_user_id():
             raise AuthenticationError("Not allowed to view this template.")
-        template_dict = template.to_dict()
-        return TemplateResponse(**template_dict)
+        template_response = TemplateResponse.from_orm(template)
+
+        return template_response
     except HTTPException as he:
         raise he
     except AuthenticationError as ae:
@@ -98,7 +60,8 @@ async def get_template(
             content=ErrorResponse(
                 message="Internal server error while retrieving template.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
@@ -125,7 +88,8 @@ async def get_user_templates(
         templates, total_pages = await service.get_all_by_user_id(
             user_id=user_id, page=page, page_size=page_size
         )
-        templates_dict = [template.to_dict() for template in templates]
+        templates_dict = [TemplateResponse.from_orm(
+            template) for template in templates]
         return TemplatesResponse(data=templates_dict, total_pages=total_pages)
     except HTTPException as he:
         raise he
@@ -136,7 +100,8 @@ async def get_user_templates(
             content=ErrorResponse(
                 message="Internal server error while retrieving user templates.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
@@ -159,8 +124,10 @@ async def get_all_templates(
         templates, total_pages = await service.get_all_templates(
             page=page, page_size=page_size
         )
-        templates_dict = [template.to_dict() for template in templates]
-        return TemplatesResponse(data=templates_dict, total_pages=total_pages)
+        templates_response = [
+            TemplateResponse.from_orm(template) for template in templates
+        ]
+        return TemplatesResponse(data=templates_response, total_pages=total_pages)
     except Exception as e:
         logger.error(f"Error retrieving all templates: {str(e)}")
         return JSONResponse(
@@ -168,7 +135,49 @@ async def get_all_templates(
             content=ErrorResponse(
                 message="Internal server error while retrieving templates.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
+                timestamp=timestamp,
+            ).dict(),
+        )
+
+
+@router.post("/", response_model=TemplateResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
+@require_auth()
+async def create_template(
+    request: Request,
+    title: str = Form(...),
+    content: str = Form(...),
+    preview_file: UploadFile = Form(None),
+    db: AsyncSession = Depends(get_db),
+    minio_service: MinioService = Depends(get_minio_service),
+):
+    timestamp = datetime.now().isoformat()
+    user: ClerkUser = request.state.user
+    try:
+        preview_image_bytes = await preview_file.read() if preview_file else None
+        repository = TemplateRepository(db)
+        service = TemplateService(repository, minio_service)
+        template = await service.create_template(
+            title=title,
+            content=content,
+            user_id=user.get_user_id(),
+            preview_image=preview_image_bytes,
+        )
+        template_response = TemplateResponse.from_orm(template)
+        logger.info(f"Template Response: {template_response}")
+
+        return template_response
+    except Exception as e:
+        logger.error(f"Template creation error: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content=ErrorResponse(
+                message="Internal server error during template creation.",
+                error_code="INTERNAL_SERVER_ERROR",
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
@@ -180,6 +189,7 @@ async def get_all_templates(
 async def update_template(
     request: Request,
     template_id: int,
+    title: str = Form(...),
     content: str = Form(...),
     preview_file: UploadFile = Form(None),
     db: AsyncSession = Depends(get_db),
@@ -197,10 +207,11 @@ async def update_template(
             raise AuthenticationError("Not allowed to update this template.")
         preview_image_bytes = await preview_file.read() if preview_file else None
         updated_template = await service.update_template(
-            template_id, content, preview_image=preview_image_bytes
+            template_id, title=title, content=content, preview_image=preview_image_bytes
         )
-        template_dict = updated_template.to_dict()
-        return TemplateResponse(**template_dict)
+        template_response = TemplateResponse.from_orm(updated_template)
+
+        return template_response
     except HTTPException as he:
         raise he
     except AuthenticationError as ae:
@@ -212,7 +223,8 @@ async def update_template(
             content=ErrorResponse(
                 message="Internal server error while updating template.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )
@@ -248,7 +260,8 @@ async def delete_template(
             content=ErrorResponse(
                 message="Internal server error while deleting template.",
                 error_code="INTERNAL_SERVER_ERROR",
-                details={"error_type": type(e).__name__, "error_message": str(e)},
+                details={"error_type": type(
+                    e).__name__, "error_message": str(e)},
                 timestamp=timestamp,
             ).dict(),
         )

@@ -10,18 +10,37 @@ class TemplateRepository:
 
     async def create(
         self,
+        title: str,
         content: str,
         user_id: Optional[str] = None,
         preview_image: Optional[str] = None,
     ) -> Template:
         template = Template(
-            content=content, user_id=user_id, preview_image=preview_image
+            title=title, content=content, user_id=user_id, preview_image=preview_image
         )
         self.db_session.add(template)
         await self.db_session.commit()
         await self.db_session.refresh(template)
         return template
 
+    async def update(
+        self,
+        template_id: int,
+        title: str,
+        content: str,
+        preview_image: Optional[str] = None,
+    ) -> Optional[Template]:
+        template = await self.get_by_id(template_id)
+        if template:
+            template.title = title
+            template.content = content
+            if preview_image is not None:
+                template.preview_image = preview_image
+            await self.db_session.commit()
+            await self.db_session.refresh(template)
+        return template
+
+    # Existing methods remain unchanged
     async def get_by_id(self, template_id: int) -> Optional[Template]:
         result = await self.db_session.execute(
             select(Template).filter(Template.id == template_id)
@@ -46,18 +65,6 @@ class TemplateRepository:
             .limit(page_size)
         )
         return list(result.scalars().all())
-
-    async def update(
-        self, template_id: int, content: str, preview_image: Optional[str] = None
-    ) -> Optional[Template]:
-        template = await self.get_by_id(template_id)
-        if template:
-            template.content = content
-            if preview_image is not None:
-                template.preview_image = preview_image
-            await self.db_session.commit()
-            await self.db_session.refresh(template)
-        return template
 
     async def delete(self, template_id: int) -> bool:
         template = await self.get_by_id(template_id)

@@ -6,6 +6,7 @@ class TemplateResponse(BaseModel):
     id: int
     content: str
     user_id: str
+    title: str
     preview_url: Optional[str]
     featured: bool = False
 

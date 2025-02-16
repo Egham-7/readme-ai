@@ -1,5 +1,5 @@
 import * as React from "react";
-import { FileEditIcon, Files, Home } from "lucide-react";
+import { FileEditIcon, Home } from "lucide-react";
 import { NavMain } from "@/components/nav-main";
 import {
   Sidebar,
