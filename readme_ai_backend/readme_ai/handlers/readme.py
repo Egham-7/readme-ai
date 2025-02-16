@@ -20,34 +20,11 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 import json
 from readme_ai.models.responses.readme import ReadmesResponse
-import re
-from html import unescape
+from readme_ai.utils.title_parser import extract_title_from_content
 
 settings = get_settings()
 router = APIRouter(tags=["readme"])
 limiter = Limiter(key_func=get_remote_address)
-
-
-def extract_title_from_content(content: str) -> str:
-    """Extract title from README content using the first heading or HTML tag"""
-    lines = content.splitlines()
-
-    for line in lines:
-        line = line.strip()
-
-        # Handle Markdown heading
-        if line.startswith("#"):
-            return line.lstrip("#").strip()
-
-        # Handle HTML tags with regex
-        if "<" in line and ">" in line:
-            # Remove HTML tags and decode HTML entities
-            clean_text = re.sub(r"<[^>]+>", "", line)
-            clean_text = unescape(clean_text)
-            if clean_text.strip():
-                return clean_text.strip()
-
-    return "Untitled README"
 
 
 @router.get("/generate-readme")
