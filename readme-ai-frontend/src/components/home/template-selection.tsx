@@ -32,7 +32,7 @@ const CommunityTemplatesContent = ({
     return <ErrorDisplay message={"Failed to get templates"} error={error} />;
 
   const filteredTemplates = data?.data.filter((template) =>
-    template.content.toLowerCase().includes(searchTerm.toLowerCase()),
+    template.title.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
@@ -93,7 +93,7 @@ const UserTemplatesContent = ({
   }
 
   const filteredTemplates = data.data.filter((template) =>
-    template.content.toLowerCase().includes(searchTerm.toLowerCase()),
+    template.title.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
