@@ -53,7 +53,8 @@ def check_token_usage():
                             "error_code": "INSUFFICIENT_TOKENS",
                             "details": {
                                 "error_type": "TokenError",
-                                "error_message": "Please purchase more tokens to continue",
+                                "error_message": "Please purchase more tokens to continue or wait for your tokens to reset",
+                                "reset": reset_time,
                             },
                             "timestamp": datetime.now(timezone.utc).isoformat(),
                         },

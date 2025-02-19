@@ -16,7 +16,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded  # type: ignore
 from fastapi.responses import JSONResponse
 
-from readme_ai.handlers import health, readme, templates
+from readme_ai.handlers import health, readme, templates, users
 
 # Load environment variables
 load_dotenv()
@@ -85,6 +85,7 @@ async def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
 app.include_router(health.router)
 app.include_router(readme.router)
 app.include_router(templates.router)
+app.include_router(users.router)
 
 # Register rate limit handler
 app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)  # type:ignore
