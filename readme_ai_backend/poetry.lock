@@ -3068,6 +3068,27 @@ anyio = ">=3.6.2,<5"
 full = ["httpx (>=0.27.0,<0.29.0)", "itsdangerous", "jinja2", "python-multipart (>=0.0.18)", "pyyaml"]
 
 [[package]]
+name = "svix"
+version = "1.58.1"
+description = "Svix webhooks API client and webhook verification library"
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "svix-1.58.1-py3-none-any.whl", hash = "sha256:c873577204645dcfb0a761123a99e1ba7a84322f5f8d35a9e99d323bbc6dc496"},
+    {file = "svix-1.58.1.tar.gz", hash = "sha256:054c50a27fb8f51ecdf181233919ec22861bee424eb3376a40ef29b3ea0e5b36"},
+]
+
+[package.dependencies]
+attrs = ">=21.3.0"
+Deprecated = "*"
+httpx = ">=0.23.0"
+pydantic = ">=2"
+python-dateutil = "*"
+types-Deprecated = "*"
+types-python-dateutil = "*"
+
+[[package]]
 name = "tenacity"
 version = "9.0.0"
 description = "Retry code until it succeeds"
@@ -3082,6 +3103,30 @@ files = [
 [package.extras]
 doc = ["reno", "sphinx"]
 test = ["pytest", "tornado (>=4.5)", "typeguard"]
+
+[[package]]
+name = "types-deprecated"
+version = "1.2.15.20241117"
+description = "Typing stubs for Deprecated"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "types-Deprecated-1.2.15.20241117.tar.gz", hash = "sha256:924002c8b7fddec51ba4949788a702411a2e3636cd9b2a33abd8ee119701d77e"},
+    {file = "types_Deprecated-1.2.15.20241117-py3-none-any.whl", hash = "sha256:a0cc5e39f769fc54089fd8e005416b55d74aa03f6964d2ed1a0b0b2e28751884"},
+]
+
+[[package]]
+name = "types-python-dateutil"
+version = "2.9.0.20241206"
+description = "Typing stubs for python-dateutil"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "types_python_dateutil-2.9.0.20241206-py3-none-any.whl", hash = "sha256:e248a4bc70a486d3e3ec84d0dc30eec3a5f979d6e7ee4123ae043eedbb987f53"},
+    {file = "types_python_dateutil-2.9.0.20241206.tar.gz", hash = "sha256:18f493414c26ffba692a72369fea7a154c502646301ebfe3d56a04b3767284cb"},
+]
 
 [[package]]
 name = "types-pyyaml"
@@ -3508,4 +3553,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "1963147500393e7b61027063b524bbefd14e440362c6e206de29e840d983e2f8"
+content-hash = "07357e6dc14d363a6521e5b712df803f39eabf1b765b83089b7e7f1dfe80dfd8"

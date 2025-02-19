@@ -4,6 +4,9 @@ services:
       context: ./readme-ai-frontend
       args:
         - VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
+        - VITE_CLERK_SIGN_UP_FORCE_REDIRECT_URL=/home
+        - VITE_CLERK_SIGN_IN_FORCE_REDIRECT_URL=/home
+        - VITE_BASE_API_URL=http://localhost:8000
     ports:
       - "3000:3000"
     depends_on:
@@ -12,8 +15,8 @@ services:
       - ./readme-ai-frontend/.env.local
     environment:
       - VITE_BASE_API_URL=http://localhost:8000
-      - VITE_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/home
-      - VITE_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/home
+      - VITE_CLERK_SIGN_IN_FORCE_REDIRECT_URL=/home
+      - VITE_CLERK_SIGN_UP_FORCE_REDIRECT_URL=/home
     networks:
       - app-network
 

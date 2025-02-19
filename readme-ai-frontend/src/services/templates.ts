@@ -26,36 +26,6 @@ export interface TemplatesResponse {
   total_pages: number;
 }
 
-export const getErrorMessage = (error: ApiError): string => {
-  switch (error.errorCode) {
-    case "REPO_ACCESS_ERROR":
-      return "Unable to access this repository. Please verify it exists and you have proper permissions.";
-    case "VALIDATION_ERROR":
-      return "The GitHub repository URL provided is not valid. Please check the URL and try again.";
-    case "ANALYSIS_ERROR":
-      return "We couldn't analyze this repository. Please verify the repository contains valid code.";
-    case "INTERNAL_SERVER_ERROR":
-      return "Our service is experiencing an issue. Please try again later.";
-    case "RATE_LIMIT_EXCEEDED":
-      return "You have made too many requests, please try again in 10 minutes.";
-    default:
-      return "Something went wrong while generating your README. Please try again.";
-  }
-};
-
-export const getErrorAction = (error: ApiError): string => {
-  switch (error.errorCode) {
-    case "REPO_ACCESS_ERROR":
-      return "Check Repository Access";
-    case "VALIDATION_ERROR":
-      return "Check Repository URL";
-    case "ANALYSIS_ERROR":
-      return "Verify Repository Content";
-    default:
-      return "Try Again";
-  }
-};
-
 export const templateService = {
   getAllTemplates: async (
     token: string,

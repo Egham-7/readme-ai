@@ -53,6 +53,27 @@ class Settings(BaseSettings):
     CLERK_PUBLISHABLE_KEY: Optional[str] = None
     APP_URL: str = "http://localhost:3000"
 
+    WEBHOOK_SECRET: str = ""
+
+    SVIX_ALLOWED_IPS = [
+        # US
+        "44.228.126.217",
+        "50.112.21.217",
+        "52.24.126.164",
+        "54.148.139.208",
+        # US Private
+        "54.164.207.221",
+        "54.90.7.123",
+        # EU
+        "52.215.16.239",
+        "54.216.8.72",
+        "63.33.109.123",
+        # India
+        "13.126.41.108",
+        "15.207.218.84",
+        "65.2.133.31",
+    ]
+
     class Config:
         env_file = ".env"
         case_sensitive = True
@@ -68,6 +89,7 @@ class Settings(BaseSettings):
             "MINIO_ROOT_USER": self.MINIO_ROOT_USER,
             "MINIO_ROOT_PASSWORD": self.MINIO_ROOT_PASSWORD,
             "MINIO_BUCKET_NAME": self.MINIO_BUCKET_NAME,
+            "WEBHOOK_SECRET": self.WEBHOOK_SECRET,
         }
 
         for var_name, var_value in critical_vars.items():
