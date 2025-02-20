@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
-from typing import Optional, List
+from typing import Optional
 
 
 class MissingEnvironmentVariable(Exception):
@@ -55,24 +55,7 @@ class Settings(BaseSettings):
 
     WEBHOOK_SECRET: str = "test"
 
-    SVIX_ALLOWED_IPS: List[str] = [
-        # US
-        "44.228.126.217",
-        "50.112.21.217",
-        "52.24.126.164",
-        "54.148.139.208",
-        # US Private
-        "54.164.207.221",
-        "54.90.7.123",
-        # EU
-        "52.215.16.239",
-        "54.216.8.72",
-        "63.33.109.123",
-        # India
-        "13.126.41.108",
-        "15.207.218.84",
-        "65.2.133.31",
-    ]
+    STRIPE_API_KEY: str = "test"
 
     class Config:
         env_file = ".env"
