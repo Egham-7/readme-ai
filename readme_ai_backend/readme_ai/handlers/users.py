@@ -71,11 +71,6 @@ async def delete_user(
 async def clerk_webhook(
     request: Request, user_service: UserService = Depends(get_user_service)
 ) -> JSONResponse:
-    # Verify IP address
-    client_ip = request.client.host if request.client else None
-    if not client_ip or client_ip not in settings.SVIX_ALLOWED_IPS:
-        raise HTTPException(status_code=403, detail="Invalid source IP")
-
     # Verify webhook signature
     svix_id = request.headers.get("svix-id", "")
     svix_timestamp = request.headers.get("svix-timestamp", "")
