@@ -6,7 +6,6 @@ from readme_ai.database import get_db
 from readme_ai.repositories.user_repository import UserRepository
 from readme_ai.services.user_service import UserService
 from readme_ai.models.requests.users import UserUpdate
-from readme_ai.models.users import User
 from readme_ai.auth import require_auth
 from slowapi import Limiter
 from slowapi.util import get_remote_address
