@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { useGenerateReadme } from "@/hooks/readme/use-generate-readme";
 import { useToast } from "@/hooks/use-toast";
 import { type ApiError } from "@/services/utils";
-import { getErrorMessage } from "@/services/templates";
+import { getErrorMessage } from "@/services/utils";
 import { z } from "zod";
 import type { Step } from "@/components/home/step-header";
 import StepHeader from "@/components/home/step-header";
