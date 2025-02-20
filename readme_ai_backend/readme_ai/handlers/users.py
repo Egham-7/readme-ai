@@ -1,20 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from readme_ai.settings import get_settings
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
 from readme_ai.database import get_db
 from readme_ai.repositories.user_repository import UserRepository
 from readme_ai.services.user_service import UserService
 from readme_ai.models.requests.users import UserUpdate
-from readme_ai.models.user import User  # type: ignore
+from readme_ai.models.users import User
 from readme_ai.auth import require_auth
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from svix.webhooks import Webhook, WebhookVerificationError
+from readme_ai.models.responses.users import UserResponse
 
 limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/users", tags=["users"])
-
 settings = get_settings()
 
 
@@ -25,31 +25,21 @@ async def get_user_service(
     return UserService(repository)
 
 
-@router.get("", response_model=List[User])
-@limiter.limit("10/minute")
-@require_auth()
-async def get_users(
-    request: Request,
-    user_service: UserService = Depends(get_user_service),
-) -> List[User]:
-    return await user_service.get_all_users()
-
-
-@router.get("/{user_id}", response_model=User)
+@router.get("/{user_id}", response_model=UserResponse)
 @limiter.limit("10/minute")
 @require_auth()
 async def get_user(
     request: Request,
-    user_id: int,
+    user_id: str,
     user_service: UserService = Depends(get_user_service),
-) -> User:
-    user = await user_service.get_user_by_id(user_id)
+):
+    user = await user_service.get_user_by_clerk_id(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return user
+    return UserResponse.from_orm(user)
 
 
-@router.patch("/{user_id}", response_model=User)
+@router.patch("/{user_id}", response_model=UserResponse)
 @limiter.limit("10/minute")
 @require_auth()
 async def update_user(
@@ -57,11 +47,11 @@ async def update_user(
     user_id: int,
     update_data: UserUpdate,
     user_service: UserService = Depends(get_user_service),
-) -> User:
+):
     user = await user_service.update_user(user_id, update_data)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return user
+    return UserResponse.from_orm(user)
 
 
 @router.delete("/{user_id}")
@@ -71,20 +61,17 @@ async def delete_user(
     request: Request,
     user_id: int,
     user_service: UserService = Depends(get_user_service),
-) -> dict:
+) -> JSONResponse:
     deleted = await user_service.delete_user(user_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="User not found")
-    return {"message": "User deleted successfully"}
-
-
-# Previous imports remain the same...
+    return JSONResponse(content={"message": "User deleted successfully"})
 
 
 @router.post("/webhook/clerk")
 async def clerk_webhook(
     request: Request, user_service: UserService = Depends(get_user_service)
-) -> dict:
+) -> JSONResponse:
     # Verify IP address
     client_ip = request.client.host if request.client else None
     if not client_ip or client_ip not in settings.SVIX_ALLOWED_IPS:
@@ -100,7 +87,6 @@ async def clerk_webhook(
 
     body = await request.body()
     wh = Webhook(settings.WEBHOOK_SECRET)
-
     try:
         payload = wh.verify(
             body,
@@ -123,7 +109,9 @@ async def clerk_webhook(
             )
             if not created_user:
                 raise HTTPException(status_code=400, detail="Failed to create user")
-            return {"status": "user created", "user_id": created_user.id}
+            return JSONResponse(
+                content={"status": "user created", "user_id": created_user.id}
+            )
 
         case "user.updated":
             found_user = await user_service.get_user_by_clerk_id(data["id"])
@@ -132,12 +120,12 @@ async def clerk_webhook(
                     email=data["email_addresses"][0]["email_address"]
                 )
                 await user_service.update_user(found_user.id, update_data)
-            return {"status": "user updated"}
+            return JSONResponse(content={"status": "user updated"})
 
         case "user.deleted":
             found_user = await user_service.get_user_by_clerk_id(data["id"])
             if found_user:
                 await user_service.delete_user(found_user.id)
-            return {"status": "user deleted"}
+            return JSONResponse(content={"status": "user deleted"})
 
-    return {"status": "event ignored"}
+    return JSONResponse(content={"status": "event ignored"})

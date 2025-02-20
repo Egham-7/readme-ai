@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
-from typing import Optional
+from typing import Optional, List
 
 
 class MissingEnvironmentVariable(Exception):
@@ -53,9 +53,9 @@ class Settings(BaseSettings):
     CLERK_PUBLISHABLE_KEY: Optional[str] = None
     APP_URL: str = "http://localhost:3000"
 
-    WEBHOOK_SECRET: str = ""
+    WEBHOOK_SECRET: str = "test"
 
-    SVIX_ALLOWED_IPS = [
+    SVIX_ALLOWED_IPS: List[str] = [
         # US
         "44.228.126.217",
         "50.112.21.217",
