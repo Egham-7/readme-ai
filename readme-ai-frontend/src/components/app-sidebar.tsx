@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Link } from "@tanstack/react-router";
 import { siGithub as Github } from "simple-icons";
-import { UserButton } from "@clerk/clerk-react";
+import { UserProfile } from "./sidebar/user-profile";
 
 const navigationItems = [
   {
@@ -48,8 +48,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent className="justify-between h-full">
         <NavMain items={navigationItems} />
 
-        <div className="w-full flex justify-start items-center px-4 py-2">
-          <UserButton />
+        <div className="w-full flex justify-start items-center p-1">
+          <UserProfile />
         </div>
       </SidebarContent>
       <SidebarRail />
