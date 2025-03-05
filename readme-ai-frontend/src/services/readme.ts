@@ -100,6 +100,7 @@ export const readmeService = {
 
   getUserReadmes: async (
     token: string,
+    query: string = "",
     page: number = 1,
     pageSize: number = 10,
   ): Promise<ReadmesResponse> => {
@@ -107,6 +108,7 @@ export const readmeService = {
       `${API_BASE_URL}/readmes?${new URLSearchParams({
         page: page.toString(),
         page_size: pageSize.toString(),
+        query,
       })}`,
       {
         headers: {

@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_, and_
 from sqlalchemy.orm import joinedload
 from typing import List, Optional, Tuple, cast
 from sqlalchemy.sql.expression import Update
@@ -34,27 +34,82 @@ class ReadmeRepository:
         return result.unique().scalars().first()
 
     async def get_user_readmes(
-        self, user_id: str, page: int = 1, page_size: int = 10
+        self, query: Optional[str], user_id: str, page: int = 1, page_size: int = 10
     ) -> Tuple[List[Readme], int]:
-        # Count total readmes
+        # Base conditions for all queries
+        base_conditions = [Readme.user_id == user_id]
+
+        # Add search condition if query is provided
+        if query and query.strip():
+            # Create search vectors for title and join with versions to search in content
+            search_query = query.strip()
+
+            # Build the full-text search condition
+            # Search in readme title
+            title_search = func.to_tsvector("english", Readme.title).op("@@")(
+                func.to_tsquery("english", " & ".join(search_query.split()))
+            )
+
+            # Search in repository_url
+            repo_search = func.to_tsvector("english", Readme.repository_url).op("@@")(
+                func.to_tsquery("english", " & ".join(search_query.split()))
+            )
+
+            # Search in readme version content (latest version)
+            latest_versions = (
+                select(
+                    ReadmeVersion.readme_id,
+                    func.max(ReadmeVersion.version_number).label("max_version"),
+                )
+                .group_by(ReadmeVersion.readme_id)
+                .subquery()
+            )
+
+            content_search_query = (
+                select(ReadmeVersion.readme_id)
+                .join(
+                    latest_versions,
+                    and_(
+                        ReadmeVersion.readme_id == latest_versions.c.readme_id,
+                        ReadmeVersion.version_number == latest_versions.c.max_version,
+                    ),
+                )
+                .where(
+                    func.to_tsvector("english", ReadmeVersion.content).op("@@")(
+                        func.to_tsquery("english", " & ".join(search_query.split()))
+                    )
+                )
+                .subquery()
+            )
+
+            # Add search conditions to base conditions
+            base_conditions.append(
+                or_(
+                    title_search,
+                    repo_search,
+                    Readme.id.in_(select(content_search_query.c.readme_id)),
+                )
+            )
+
+        # Count total readmes matching the search
         count_query = select(func.count(Readme.id.distinct())).where(
-            Readme.user_id == user_id
+            and_(*base_conditions)
         )
         total = await self.db_session.execute(count_query)
         total_count = cast(int, total.scalar() or 0)
 
         # Get paginated readmes with versions
-        query = (
+        db_query = (
             select(Readme)
             .distinct()
             .options(joinedload(Readme.versions), joinedload(Readme.chat_messages))
-            .where(Readme.user_id == user_id)
+            .where(and_(*base_conditions))
             .order_by(Readme.created_at.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
         )
 
-        result = await self.db_session.execute(query)
+        result = await self.db_session.execute(db_query)
         readmes = result.unique().scalars().all()
 
         total_pages = (total_count + page_size - 1) // page_size
