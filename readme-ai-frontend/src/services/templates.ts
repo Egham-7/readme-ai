@@ -31,15 +31,21 @@ export const templateService = {
     token: string,
     page: number,
     pageSize: number,
+    query?: string,
   ): Promise<TemplatesResponse> => {
-    const response = await fetch(
-      `${API_BASE_URL}/templates/?page=${page}&page_size=${pageSize}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    let url = `${API_BASE_URL}/templates/?page=${page}&page_size=${pageSize}`;
+
+    // Add query parameter if provided
+    if (query) {
+      url += `&query=${encodeURIComponent(query)}`;
+    }
+
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
-    );
+    });
+
     if (!response.ok) {
       const errorData = (await response.json()) as ApiErrorResponse;
       throw new ApiError(
@@ -49,6 +55,7 @@ export const templateService = {
         errorData.timestamp,
       );
     }
+
     return response.json();
   },
 
@@ -58,6 +65,7 @@ export const templateService = {
         Authorization: `Bearer ${token}`,
       },
     });
+
     if (!response.ok) {
       const errorData = (await response.json()) as ApiErrorResponse;
       throw new ApiError(
@@ -67,6 +75,7 @@ export const templateService = {
         errorData.timestamp,
       );
     }
+
     return response.json();
   },
 
@@ -88,6 +97,7 @@ export const templateService = {
       },
       body: formData,
     });
+
     if (!response.ok) {
       const errorData = (await response.json()) as ApiErrorResponse;
       throw new ApiError(
@@ -97,6 +107,7 @@ export const templateService = {
         errorData.timestamp,
       );
     }
+
     return response.json();
   },
 
@@ -123,6 +134,7 @@ export const templateService = {
       },
       body: formData,
     });
+
     if (!response.ok) {
       const errorData = (await response.json()) as ApiErrorResponse;
       throw new ApiError(
@@ -132,6 +144,7 @@ export const templateService = {
         errorData.timestamp,
       );
     }
+
     return response.json();
   },
 
@@ -142,6 +155,7 @@ export const templateService = {
         Authorization: `Bearer ${token}`,
       },
     });
+
     if (!response.ok) {
       const errorData = (await response.json()) as ApiErrorResponse;
       throw new ApiError(
@@ -158,15 +172,21 @@ export const templateService = {
     token: string,
     page: number,
     pageSize: number,
+    query?: string,
   ): Promise<TemplatesResponse> => {
-    const response = await fetch(
-      `${API_BASE_URL}/templates/user/${userId}?page=${page}&page_size=${pageSize}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    let url = `${API_BASE_URL}/templates/user/${userId}?page=${page}&page_size=${pageSize}`;
+
+    // Add query parameter if provided
+    if (query) {
+      url += `&query=${encodeURIComponent(query)}`;
+    }
+
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
-    );
+    });
+
     if (!response.ok) {
       const errorData = (await response.json()) as ApiErrorResponse;
       throw new ApiError(
@@ -176,6 +196,7 @@ export const templateService = {
         errorData.timestamp,
       );
     }
+
     return response.json();
   },
 };

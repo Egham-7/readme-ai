@@ -4,15 +4,15 @@ import type { TemplatesResponse } from "@/services/templates";
 import { ApiError } from "@/services/utils";
 import templateService from "@/services/templates";
 
-export const useTemplates = (page = 1, pageSize = 10) => {
+export const useTemplates = (page = 1, pageSize = 10, query = "") => {
   const { getToken } = useAuth();
   return useQuery<TemplatesResponse, ApiError>({
-    queryKey: ["templates", page, pageSize],
+    queryKey: ["templates", page, pageSize, query],
     queryFn: async () => {
       const token = await getToken();
       if (!token)
         throw new ApiError("Authentication required", "AUTH_REQUIRED");
-      return templateService.getAllTemplates(token, page, pageSize);
+      return templateService.getAllTemplates(token, page, pageSize, query);
     },
   });
 };

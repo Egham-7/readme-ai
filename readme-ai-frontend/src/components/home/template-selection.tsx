@@ -25,19 +25,18 @@ const CommunityTemplatesContent = ({
   searchTerm: string;
 }) => {
   const [page, setPage] = useState(1);
-  const { data, isLoading, error } = useTemplates(page);
+  // Pass searchTerm as query parameter
+  const { data, isLoading, error } = useTemplates(page, undefined, searchTerm);
 
   if (isLoading) return <TemplatesContentSkeleton />;
+
   if (error)
     return <ErrorDisplay message={"Failed to get templates"} error={error} />;
 
-  const filteredTemplates = data?.data.filter((template) =>
-    template.title.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
+  // No need to filter client-side as search is now handled by the API
   return (
     <div className="space-y-4">
-      <TemplateGrid templates={filteredTemplates ?? []} onSelect={onSelect} />
+      <TemplateGrid templates={data?.data ?? []} onSelect={onSelect} />
       <Pagination>
         <PaginationContent>
           <PaginationItem>
@@ -76,9 +75,15 @@ const UserTemplatesContent = ({
   searchTerm: string;
 }) => {
   const [page, setPage] = useState(1);
-  const { data, isLoading, error } = useUserTemplates(page);
+  // Pass searchTerm as query parameter
+  const { data, isLoading, error } = useUserTemplates(
+    page,
+    undefined,
+    searchTerm,
+  );
 
   if (isLoading) return <TemplatesContentSkeleton />;
+
   if (error)
     return (
       <ErrorDisplay message={"Failed to get your templates"} error={error} />
@@ -92,13 +97,10 @@ const UserTemplatesContent = ({
     );
   }
 
-  const filteredTemplates = data.data.filter((template) =>
-    template.title.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
+  // No need to filter client-side as search is now handled by the API
   return (
     <div className="space-y-4">
-      <TemplateGrid templates={filteredTemplates} onSelect={onSelect} />
+      <TemplateGrid templates={data.data} onSelect={onSelect} />
       <Pagination>
         <PaginationContent>
           <PaginationItem>
@@ -142,7 +144,6 @@ export function TemplateSelection({
         setSearchTerm={setSearchTerm}
         placeholder="Search templates..."
       />
-
       <Tabs defaultValue="community" className="space-y-4 md:space-y-6">
         <TabsList className="flex mb-20 w-full flex-wrap md:flex-nowrap gap-2 md:gap-0 md:justify-start md:bg-muted/30 md:mb-0">
           <TabsTrigger
@@ -158,7 +159,6 @@ export function TemplateSelection({
             My Templates
           </TabsTrigger>
         </TabsList>
-
         <TabsContent value="community" className="space-y-4 md:space-y-6">
           <div className="flex flex-col md:flex-row gap-3 md:gap-0 md:justify-between md:items-center">
             <h3 className="text-base md:text-xl font-semibold">
@@ -175,7 +175,6 @@ export function TemplateSelection({
             searchTerm={searchTerm}
           />
         </TabsContent>
-
         <TabsContent value="custom" className="space-y-4 md:space-y-6">
           <div className="flex flex-col md:flex-row gap-3 md:gap-0 md:justify-between md:items-center">
             <h3 className="text-base md:text-xl font-semibold">
