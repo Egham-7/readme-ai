@@ -139,10 +139,7 @@ async def generate_readme(
                 repository_url=repo_url,
                 title=final_title,
             )
-            logger.info(
-                f"Created readme with id: {
-                    readme.id}"
-            )
+            logger.info(f"Created readme with id: {readme.id}")
 
             await readme_service.create_version(
                 readme_id=readme.id, content=readme_content["readme"]
@@ -182,6 +179,7 @@ async def generate_readme(
 async def get_user_readmes(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    query: str = Query(default=""),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=100),
 ):
@@ -192,7 +190,7 @@ async def get_user_readmes(
         readme_service = ReadmeService(readme_repository=readme_repository)
 
         readmes, total_pages = await readme_service.get_user_readmes(
-            user_id=user.get_user_id(), page=page, page_size=page_size
+            user_id=user.get_user_id(), page=page, page_size=page_size, query=query
         )
 
         logger.info(f"Readmes: {readmes}")

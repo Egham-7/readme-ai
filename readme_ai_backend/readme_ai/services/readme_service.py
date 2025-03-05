@@ -19,9 +19,11 @@ class ReadmeService:
         return await self.repository.get_readme_with_versions(readme_id)
 
     async def get_user_readmes(
-        self, user_id: str, page: int = 1, page_size: int = 10
+        self, user_id: str, query: str, page: int = 1, page_size: int = 10
     ) -> Tuple[List[Readme], int]:
-        return await self.repository.get_user_readmes(user_id, page, page_size)
+        return await self.repository.get_user_readmes(
+            query=query, user_id=user_id, page=page, page_size=page_size
+        )
 
     async def create_version(self, readme_id: int, content: str) -> ReadmeVersion:
         readme = await self.repository.get_readme(readme_id)
