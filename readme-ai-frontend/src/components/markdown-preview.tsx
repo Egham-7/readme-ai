@@ -4,7 +4,12 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeRaw from "rehype-raw";
 
-const MarkdownPreview = ({ content }: { content: string }) => (
+const MarkdownPreview = ({
+  content,
+}: {
+  content: string;
+  onChange?: (value: string) => void;
+}) => (
   <ReactMarkdown
     remarkPlugins={[remarkGfm]}
     rehypePlugins={[rehypeRaw]}

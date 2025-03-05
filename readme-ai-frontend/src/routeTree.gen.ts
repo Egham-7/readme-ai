@@ -18,6 +18,7 @@ import { Route as HomeTemplatesIndexImport } from "./routes/_home/templates/inde
 import { Route as HomeReadmesIndexImport } from "./routes/_home/readmes/index"
 import { Route as HomeTemplatesCreateIndexImport } from "./routes/_home/templates/create/index"
 import { Route as HomeTemplatesUpdateTemplateIdImport } from "./routes/_home/templates/update/$templateId"
+import { Route as HomeReadmesChatReadmeIdImport } from "./routes/_home/readmes/chat/$readmeId"
 
 // Create/Update Routes
 
@@ -63,6 +64,12 @@ const HomeTemplatesUpdateTemplateIdRoute =
     getParentRoute: () => HomeRoute,
   } as any)
 
+const HomeReadmesChatReadmeIdRoute = HomeReadmesChatReadmeIdImport.update({
+  id: "/readmes/chat/$readmeId",
+  path: "/readmes/chat/$readmeId",
+  getParentRoute: () => HomeRoute,
+} as any)
+
 // Populate the FileRoutesByPath interface
 
 declare module "@tanstack/react-router" {
@@ -102,6 +109,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof HomeTemplatesIndexImport
       parentRoute: typeof HomeImport
     }
+    "/_home/readmes/chat/$readmeId": {
+      id: "/_home/readmes/chat/$readmeId"
+      path: "/readmes/chat/$readmeId"
+      fullPath: "/readmes/chat/$readmeId"
+      preLoaderRoute: typeof HomeReadmesChatReadmeIdImport
+      parentRoute: typeof HomeImport
+    }
     "/_home/templates/update/$templateId": {
       id: "/_home/templates/update/$templateId"
       path: "/templates/update/$templateId"
@@ -125,6 +139,7 @@ interface HomeRouteChildren {
   HomeHomeRoute: typeof HomeHomeRoute
   HomeReadmesIndexRoute: typeof HomeReadmesIndexRoute
   HomeTemplatesIndexRoute: typeof HomeTemplatesIndexRoute
+  HomeReadmesChatReadmeIdRoute: typeof HomeReadmesChatReadmeIdRoute
   HomeTemplatesUpdateTemplateIdRoute: typeof HomeTemplatesUpdateTemplateIdRoute
   HomeTemplatesCreateIndexRoute: typeof HomeTemplatesCreateIndexRoute
 }
@@ -133,6 +148,7 @@ const HomeRouteChildren: HomeRouteChildren = {
   HomeHomeRoute: HomeHomeRoute,
   HomeReadmesIndexRoute: HomeReadmesIndexRoute,
   HomeTemplatesIndexRoute: HomeTemplatesIndexRoute,
+  HomeReadmesChatReadmeIdRoute: HomeReadmesChatReadmeIdRoute,
   HomeTemplatesUpdateTemplateIdRoute: HomeTemplatesUpdateTemplateIdRoute,
   HomeTemplatesCreateIndexRoute: HomeTemplatesCreateIndexRoute,
 }
@@ -145,6 +161,7 @@ export interface FileRoutesByFullPath {
   "/home": typeof HomeHomeRoute
   "/readmes": typeof HomeReadmesIndexRoute
   "/templates": typeof HomeTemplatesIndexRoute
+  "/readmes/chat/$readmeId": typeof HomeReadmesChatReadmeIdRoute
   "/templates/update/$templateId": typeof HomeTemplatesUpdateTemplateIdRoute
   "/templates/create": typeof HomeTemplatesCreateIndexRoute
 }
@@ -155,6 +172,7 @@ export interface FileRoutesByTo {
   "/home": typeof HomeHomeRoute
   "/readmes": typeof HomeReadmesIndexRoute
   "/templates": typeof HomeTemplatesIndexRoute
+  "/readmes/chat/$readmeId": typeof HomeReadmesChatReadmeIdRoute
   "/templates/update/$templateId": typeof HomeTemplatesUpdateTemplateIdRoute
   "/templates/create": typeof HomeTemplatesCreateIndexRoute
 }
@@ -166,6 +184,7 @@ export interface FileRoutesById {
   "/_home/home": typeof HomeHomeRoute
   "/_home/readmes/": typeof HomeReadmesIndexRoute
   "/_home/templates/": typeof HomeTemplatesIndexRoute
+  "/_home/readmes/chat/$readmeId": typeof HomeReadmesChatReadmeIdRoute
   "/_home/templates/update/$templateId": typeof HomeTemplatesUpdateTemplateIdRoute
   "/_home/templates/create/": typeof HomeTemplatesCreateIndexRoute
 }
@@ -178,6 +197,7 @@ export interface FileRouteTypes {
     | "/home"
     | "/readmes"
     | "/templates"
+    | "/readmes/chat/$readmeId"
     | "/templates/update/$templateId"
     | "/templates/create"
   fileRoutesByTo: FileRoutesByTo
@@ -187,6 +207,7 @@ export interface FileRouteTypes {
     | "/home"
     | "/readmes"
     | "/templates"
+    | "/readmes/chat/$readmeId"
     | "/templates/update/$templateId"
     | "/templates/create"
   id:
@@ -196,6 +217,7 @@ export interface FileRouteTypes {
     | "/_home/home"
     | "/_home/readmes/"
     | "/_home/templates/"
+    | "/_home/readmes/chat/$readmeId"
     | "/_home/templates/update/$templateId"
     | "/_home/templates/create/"
   fileRoutesById: FileRoutesById
@@ -234,6 +256,7 @@ export const routeTree = rootRoute
         "/_home/home",
         "/_home/readmes/",
         "/_home/templates/",
+        "/_home/readmes/chat/$readmeId",
         "/_home/templates/update/$templateId",
         "/_home/templates/create/"
       ]
@@ -248,6 +271,10 @@ export const routeTree = rootRoute
     },
     "/_home/templates/": {
       "filePath": "_home/templates/index.tsx",
+      "parent": "/_home"
+    },
+    "/_home/readmes/chat/$readmeId": {
+      "filePath": "_home/readmes/chat/$readmeId.tsx",
       "parent": "/_home"
     },
     "/_home/templates/update/$templateId": {
