@@ -35,7 +35,9 @@ class Settings(BaseSettings):
     MAX_CACHE_SIZE: int = 100
 
     # Database Settings
-    DATABASE_URL: str = "postgresql://postgres:secretpassword@postgres:5432/readmeai"
+    DATABASE_URL: str = (
+        "postgresql+asyncpg://postgres:secretpassword@postgres:5432/readmeai"
+    )
 
     # MinIO Settings
     MINIO_PRIVATE_ENDPOINT: str = "minio:9000"

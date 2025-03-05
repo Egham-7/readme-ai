@@ -74,6 +74,7 @@ async def get_user_templates(
     user_id: str,
     db: AsyncSession = Depends(get_db),
     minio_service: MinioService = Depends(get_minio_service),
+    query: str = Query(default=""),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=100),
 ):
@@ -85,7 +86,7 @@ async def get_user_templates(
         repository = TemplateRepository(db)
         service = TemplateService(repository, minio_service)
         templates, total_pages = await service.get_all_by_user_id(
-            user_id=user_id, page=page, page_size=page_size
+            user_id=user_id, page=page, page_size=page_size, query=query
         )
         templates_dict = [TemplateResponse.from_orm(template) for template in templates]
         return TemplatesResponse(data=templates_dict, total_pages=total_pages)
@@ -111,6 +112,7 @@ async def get_all_templates(
     request: Request,
     db: AsyncSession = Depends(get_db),
     minio_service: MinioService = Depends(get_minio_service),
+    query: str = Query(default=""),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=100),
 ):
@@ -119,7 +121,7 @@ async def get_all_templates(
         repository = TemplateRepository(db)
         service = TemplateService(repository, minio_service)
         templates, total_pages = await service.get_all_templates(
-            page=page, page_size=page_size
+            page=page, page_size=page_size, query=query
         )
         templates_response = [
             TemplateResponse.from_orm(template) for template in templates

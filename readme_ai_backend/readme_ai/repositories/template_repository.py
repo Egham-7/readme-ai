@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func, or_
 from typing import List, Optional
 from readme_ai.models.template import Template
 
@@ -47,23 +47,62 @@ class TemplateRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_all(self, page: int = 1, page_size: int = 10) -> List[Template]:
+    async def get_all(
+        self, query: Optional[str], page: int = 1, page_size: int = 10
+    ) -> List[Template]:
         offset = (page - 1) * page_size
-        result = await self.db_session.execute(
-            select(Template).offset(offset).limit(page_size)
-        )
+
+        stmt = select(Template)
+
+        if query:
+            stmt = stmt.filter(
+                or_(
+                    func.to_tsvector("english", Template.title).op("@@")(
+                        func.plainto_tsquery("english", query)
+                    ),
+                    func.to_tsvector("english", Template.content).op("@@")(
+                        func.plainto_tsquery("english", query)
+                    ),
+                )
+            )
+
+        # Add pagination
+        stmt = stmt.offset(offset).limit(page_size)
+
+        # Execute the query
+        result = await self.db_session.execute(stmt)
+
         return list(result.scalars().all())
 
     async def get_all_by_user_id(
-        self, user_id: str, page: int = 1, page_size: int = 10
+        self, user_id: str, query: Optional[str], page: int = 1, page_size: int = 10
     ) -> List[Template]:
         offset = (page - 1) * page_size
-        result = await self.db_session.execute(
-            select(Template)
-            .filter(Template.user_id == user_id)
-            .offset(offset)
-            .limit(page_size)
-        )
+
+        # Start building the base query
+        stmt = select(Template).filter(Template.user_id == user_id)
+
+        # Add search filter if query is not empty
+        if query:
+            # Using PostgreSQL full-text search
+            # Search in both title and content
+            stmt = stmt.filter(
+                or_(
+                    func.to_tsvector("english", Template.title).op("@@")(
+                        func.plainto_tsquery("english", query)
+                    ),
+                    func.to_tsvector("english", Template.content).op("@@")(
+                        func.plainto_tsquery("english", query)
+                    ),
+                )
+            )
+
+        # Add pagination
+        stmt = stmt.offset(offset).limit(page_size)
+
+        # Execute the query
+        result = await self.db_session.execute(stmt)
+
         return list(result.scalars().all())
 
     async def delete(self, template_id: int) -> bool:

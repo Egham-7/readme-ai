@@ -1,5 +1,5 @@
-# Use Python 3.13-slim as base image
-FROM python:3.13-slim AS python-base
+# Use Python 3.13-alpine as base image
+FROM python:3.13-alpine AS python-base
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -20,11 +20,11 @@ ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
 # Build dependencies stage
 FROM python-base AS builder-base
 
-# Install system dependencies required for psycopg2
-RUN apt-get update && apt-get install --no-install-recommends -y \
+# Install system dependencies required for building packages
+RUN apk add --no-cache \
   curl \
-  build-essential \
-  libpq-dev \
+  build-base \
+  postgresql-dev \
   python3-dev \
   gcc
 
@@ -42,11 +42,14 @@ RUN poetry install --only main --no-root
 # Runtime stage
 FROM python-base AS production
 
+# Install runtime dependencies (libpq for PostgreSQL and bash for shell script)
+RUN apk add --no-cache libpq bash
+
 # Copy virtual environment from builder
 COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
 
 # Create and switch to non-root user
-RUN useradd --create-home appuser
+RUN adduser -D appuser
 USER appuser
 
 # Set working directory
@@ -57,12 +60,14 @@ COPY --chown=appuser:appuser entrypoint.sh /entrypoint.sh
 COPY --chown=appuser:appuser alembic.ini /app/alembic.ini
 COPY --chown=appuser:appuser migrations /app/migrations
 
-# Make entrypoint script executable
-RUN chmod +x /entrypoint.sh
+# Make entrypoint script executable and ensure proper line endings
+USER root
+RUN sed -i 's/\r$//' /entrypoint.sh && \
+  chmod +x /entrypoint.sh
+USER appuser
 
 # Expose port
 EXPOSE 8000
 
 # Run migrations and start the application
-ENTRYPOINT ["/entrypoint.sh"]
-
+ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]

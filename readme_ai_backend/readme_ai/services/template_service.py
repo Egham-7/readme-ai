@@ -86,10 +86,12 @@ class TemplateService:
         return template
 
     async def get_all_templates(
-        self, page: int = 1, page_size: int = 10
+        self, query: Optional[str], page: int = 1, page_size: int = 10
     ) -> Tuple[List[Template], int]:
         try:
-            templates = await self.repository.get_all(page=page, page_size=page_size)
+            templates = await self.repository.get_all(
+                page=page, page_size=page_size, query=query
+            )
             total_count = await self.repository.get_total_count()
             total_pages = math.ceil(total_count / page_size)
             for template in templates:
@@ -114,11 +116,15 @@ class TemplateService:
             raise Exception(f"Failed to delete template: {str(e)}")
 
     async def get_all_by_user_id(
-        self, user_id: str, page: int = 1, page_size: int = 10
+        self,
+        user_id: str,
+        query: Optional[str],
+        page: int = 1,
+        page_size: int = 10,
     ) -> Tuple[List[Template], int]:
         try:
             templates = await self.repository.get_all_by_user_id(
-                user_id=user_id, page=page, page_size=page_size
+                user_id=user_id, page=page, page_size=page_size, query=query
             )
             total_count = await self.repository.get_total_count_by_user_id(user_id)
             total_pages = math.ceil(total_count / page_size)
