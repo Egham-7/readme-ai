@@ -314,3 +314,54 @@ async def delete_readme(
                 "timestamp": datetime.now().isoformat(),
             },
         )
+
+
+@router.get("/readmes/{readme_id}")
+@limiter.limit("20/minute")
+@require_auth()
+async def get_readme(
+    request: Request, readme_id: int, db: AsyncSession = Depends(get_db)
+):
+    user: ClerkUser = request.state.user
+
+    try:
+        readme_repository = ReadmeRepository(db_session=db)
+        readme_service = ReadmeService(readme_repository=readme_repository)
+
+        # Get readme with all its versions
+        readme = await readme_service.get_readme_with_versions(readme_id)
+
+        if not readme:
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "message": "README not found",
+                    "error_code": "NOT_FOUND",
+                    "timestamp": datetime.now().isoformat(),
+                },
+            )
+
+        # Check if the user is authorized to access this readme
+        if readme.user_id != user.get_user_id():
+            return JSONResponse(
+                status_code=403,
+                content={
+                    "message": "Not authorized to access this README",
+                    "error_code": "FORBIDDEN",
+                    "timestamp": datetime.now().isoformat(),
+                },
+            )
+
+        return Readme.from_orm(readme)
+
+    except Exception as e:
+        logger.error(f"Error fetching README: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "message": "Error fetching README",
+                "error_code": "INTERNAL_SERVER_ERROR",
+                "details": {"error_type": type(e).__name__, "error_message": str(e)},
+                "timestamp": datetime.now().isoformat(),
+            },
+        )

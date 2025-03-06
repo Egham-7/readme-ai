@@ -28,6 +28,7 @@ class ReadmeRepository:
         query = (
             select(Readme)
             .options(joinedload(Readme.versions))
+            .options(joinedload(Readme.chat_messages))
             .where(Readme.id == readme_id)
         )
         result = await self.db_session.execute(query)

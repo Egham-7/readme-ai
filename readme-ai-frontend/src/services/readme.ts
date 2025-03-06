@@ -130,6 +130,27 @@ export const readmeService = {
     return response.json();
   },
 
+  getReadme: async (token: string, readmeId: number): Promise<Readme> => {
+    const response = await fetch(`${API_BASE_URL}/readmes/${readmeId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new ApiError(
+        error.message,
+        error.error_code,
+        error.details,
+        error.timestamp,
+      );
+    }
+
+    const result = await response.json();
+    return result.data;
+  },
+
   updateReadme: async (
     token: string,
     id: number,
