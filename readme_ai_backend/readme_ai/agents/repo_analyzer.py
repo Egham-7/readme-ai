@@ -102,6 +102,25 @@ class RepoAnalyzerService:
             repo_url = repo.url
             await self.get_github_repo_metadata(repo_url, self.github_token)
 
+            # Check for existing file contents first
+            existing_files = await self.repository_service.get_repository_file_contents(
+                repo.id
+            )
+
+            # If we already have file contents, return them instead of analyzing again
+            if existing_files and len(existing_files) > 0:
+                logger.info(f"Using existing analysis for repository {repo.id}")
+                return {
+                    "status": "success",
+                    "repo_url": repo_url,
+                    "files_analyzed": len(existing_files),
+                    "analysis": [
+                        {"path": file.path, "analysis": file.content}
+                        for file in existing_files
+                    ],
+                    "from_cache": True,
+                }
+
             # Collect files
             files_to_analyze = await self._collect_files(repo_url)
 
@@ -109,25 +128,21 @@ class RepoAnalyzerService:
             files_content = await self._read_files_concurrently(
                 repo_url, files_to_analyze
             )
+
             if not files_content:
                 raise AnalysisError("Failed to read any files")
 
             analyses = await self._analyze_files_concurrently(files_content, repo_url)
 
-            existing_files = await self.repository_service.get_repository_file_contents(
-                repo.id
-            )
-
+            # Store the file content and analysis in the database
             for file_analysis in analyses:
-                if len(existing_files) <= 0:
-                    break
-
                 analysis_text = file_analysis["analysis"]
                 embedding = self.embeddings.embed_query(analysis_text)
-
-                # Store the file content and analysis in the database
                 await self.repository_service.add_file_content(
-                    repository_id=repo.id, content=analysis_text, embedding=embedding
+                    repository_id=repo.id,
+                    content=analysis_text,
+                    embedding=embedding,
+                    path=file_analysis["path"],
                 )
 
             return {
@@ -135,6 +150,7 @@ class RepoAnalyzerService:
                 "repo_url": repo_url,
                 "files_analyzed": len(analyses),
                 "analysis": analyses,
+                "from_cache": False,
             }
         except RepoAccessError as e:
             return {

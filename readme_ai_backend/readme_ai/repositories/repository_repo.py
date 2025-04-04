@@ -56,12 +56,17 @@ class RepositoryRepo:
         return True
 
     async def add_file_content(
-        self, repository_id: int, content: str, content_embedding: list[float]
+        self,
+        repository_id: int,
+        content: str,
+        content_embedding: list[float],
+        path: str,
     ) -> FileContent:
         file_content = FileContent(
             content=content,
             repository_id=repository_id,
             content_embedding=content_embedding,
+            path=path,
         )
         self.db_session.add(file_content)
         await self.db_session.commit()

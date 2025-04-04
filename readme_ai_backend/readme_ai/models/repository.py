@@ -38,6 +38,7 @@ class FileContent(Base):
     )
     repository = relationship("Repository", back_populates="file_contents")
     content_embedding: Mapped[Vector] = mapped_column(Vector[1536])
+    path: Mapped[str] = mapped_column(String, nullable=False)
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)

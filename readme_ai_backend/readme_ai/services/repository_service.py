@@ -36,7 +36,7 @@ class RepositoryService:
         return await self.repository_repo.delete_repository(repository_id)
 
     async def add_file_content(
-        self, repository_id: int, content: str, embedding: list
+        self, repository_id: int, content: str, embedding: list[float], path: str
     ) -> FileContent:
         # Verify repository exists
         repository = await self.repository_repo.get_repository_by_id(repository_id)
@@ -44,7 +44,7 @@ class RepositoryService:
             raise ValueError(f"Repository with ID {repository_id} not found")
 
         return await self.repository_repo.add_file_content(
-            repository_id, content, embedding
+            repository_id, content, embedding, path
         )
 
     async def get_file_content(self, file_id: int) -> Optional[FileContent]:
