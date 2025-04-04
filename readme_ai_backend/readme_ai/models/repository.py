@@ -13,7 +13,9 @@ class Repository(Base):
     url: Mapped[str] = mapped_column(String, unique=True, index=True)
 
     # Foreign key relationship with User
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), index=True)
+    user_id: Mapped[str] = mapped_column(
+        Integer, ForeignKey("users.clerk_id"), index=True
+    )
     user = relationship("User", back_populates="repositories")
 
     # Relationship with FileAnalysis

@@ -9,7 +9,7 @@ class RepositoryRepo:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def create_repository(self, name: str, url: str, user_id: int) -> Repository:
+    async def create_repository(self, name: str, url: str, user_id: str) -> Repository:
         repository = Repository(name=name, url=url, user_id=user_id)
         self.db_session.add(repository)
         await self.db_session.commit()

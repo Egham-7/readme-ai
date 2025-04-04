@@ -9,7 +9,7 @@ class RepositoryService:
     def __init__(self, db_session: AsyncSession):
         self.repository_repo = RepositoryRepo(db_session)
 
-    async def create_repository(self, name: str, url: str, user_id: int) -> Repository:
+    async def create_repository(self, name: str, url: str, user_id: str) -> Repository:
         # Check if repository with the same URL already exists
         existing_repo = await self.repository_repo.get_repository_by_url(url)
         if existing_repo:
