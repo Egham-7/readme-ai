@@ -47,7 +47,12 @@ class RepoAnalyzerService:
         extension = "." + file_path.split(".")[-1].lower() if "." in file_path else ""
         repo_metadata = await self.get_github_repo_metadata(repo_url, self.github_token)
         specific_extensions = gitignore_by_language.get(repo_metadata["language"], [])
-        return extension in binary_extensions or extension in specific_extensions
+        general_extensions = gitignore_by_language.get("General", [])
+        return (
+            extension in binary_extensions
+            or extension in specific_extensions
+            or extension in general_extensions
+        )
 
     async def analyze_repo(self, repo: Repository) -> Dict[str, Any]:
         """

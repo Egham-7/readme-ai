@@ -260,6 +260,9 @@ gitignore_by_language = {
         ".cache/",
         "tmp/",
         "*.min.js",
+        "bun.lockb",
+        "pnpm-lock.yaml",
+        "package-lock.json",
     ],
     ".NET": [
         "bin/",
