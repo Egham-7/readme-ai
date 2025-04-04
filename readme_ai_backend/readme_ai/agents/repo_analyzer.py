@@ -4,7 +4,6 @@ import asyncio
 from typing import List, Optional, Dict, Any
 from github import Github, GithubException  # type: ignore
 from langchain_openai import OpenAIEmbeddings
-from aiohttp import ClientSession  # type:ignore
 from readme_ai.models.repository import Repository  # type: ignore
 from readme_ai.services.repository_service import RepositoryService
 from readme_ai.services.file_analyzers import AnalyzerFactory, FileAnalyzer  # type: ignore
@@ -31,18 +30,11 @@ class RepoAnalyzerService:
     def __init__(self, github_token: str, repository_service: RepositoryService):
         self.github_token = github_token
         self.embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
-        self.session = ClientSession()
         self._file_content_cache: dict[str, str] = {}
         self._gitignore_cache: dict[str, list[str]] = {}
         self.analyzer_factory = AnalyzerFactory()
         self.repository_service = repository_service
         logger.info("FileAnalyzerService initialized")
-
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, *args):
-        await self.session.close()
 
     async def _parse_gitignore(self, content: str) -> List[str]:
         """Parse a .gitignore file and return a list of patterns"""
