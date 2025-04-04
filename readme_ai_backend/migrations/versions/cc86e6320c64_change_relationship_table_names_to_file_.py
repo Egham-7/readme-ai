@@ -71,7 +71,7 @@ def downgrade() -> None:
         ),
         sa.Column(
             "content_embedding",
-            pgvector.sqlalchemy.vector.VECTOR(),
+            VECTOR(),
             autoincrement=False,
             nullable=False,
         ),
