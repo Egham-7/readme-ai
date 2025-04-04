@@ -136,6 +136,7 @@ binary_extensions = {
     ".msi",
     ".sys",
     ".tmp",
+    ".lockb",
 }
 
 
