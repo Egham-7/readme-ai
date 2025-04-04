@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from sqlalchemy import Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from readme_ai.models.base import Base
+from pgvector.sqlalchemy import Vector  # type: ignore
 
 
 class Repository(Base):
@@ -40,6 +41,8 @@ class FileContent(Base):
         Integer, ForeignKey("repositories.id"), index=True
     )
     repository = relationship("Repository", back_populates="file_analyses")
+
+    content_embedding: Mapped[Vector] = mapped_column(Vector[1536])
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
