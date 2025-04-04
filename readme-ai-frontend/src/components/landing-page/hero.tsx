@@ -37,7 +37,7 @@ export default function Hero() {
               </Link>
             </SignedIn>
             <SignedOut>
-              <SignUpButton mode="modal">
+              <SignUpButton mode="modal" signInForceRedirectUrl="/home">
                 <Button
                   className="relative group px-8 py-6 text-lg rounded-full bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_200%] bg-left hover:bg-right transition-all duration-500"
                   size="lg"

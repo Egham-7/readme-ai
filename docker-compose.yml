@@ -36,14 +36,13 @@ services:
       - MINIO_ROOT_USER=minioadmin
       - MINIO_ROOT_PASSWORD=minioadmin
       - PORT=8000
-
     volumes:
       - ./readme_ai_backend:/app
     networks:
       - app-network
 
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg17
     ports:
       - "5432:5432"
     environment:

@@ -14,25 +14,17 @@ class MissingEnvironmentVariable(Exception):
 class Settings(BaseSettings):
     # API Keys
     GROQ_API_KEY: str = ""
+    OPENAI_API_KEY: str = ""
     GITHUB_TOKEN: str = ""
 
     # App Settings
-    APP_NAME: str = "README Generator"
+    APP_NAME: str = "ReadYou"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
 
     # Server Settings
     HOST: str = "0.0.0.0"
     PORT: int = 8000
-    WORKERS: int = 4
-
-    # Model Settings
-    MODEL_NAME: str = "mixtral-8x7b-32768"
-    TEMPERATURE: float = 0.7
-
-    # Cache Settings
-    CACHE_TTL: int = 3600  # 1 hour
-    MAX_CACHE_SIZE: int = 100
 
     # Database Settings
     DATABASE_URL: str = (

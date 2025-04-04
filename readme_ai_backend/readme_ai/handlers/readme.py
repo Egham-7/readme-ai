@@ -3,11 +3,12 @@ from fastapi import APIRouter, Request, Depends, Query
 from fastapi.responses import JSONResponse
 from datetime import datetime
 from readme_ai.models.requests.readme import Readme, ReadmeUpdate
+from readme_ai.services.repository_service import RepositoryService
 from sqlalchemy.ext.asyncio import AsyncSession
 from readme_ai.auth import ClerkUser, require_auth, require_sse_auth
 from readme_ai.database import get_db
 from readme_ai.services.miniio_service import MinioService, get_minio_service
-from readme_ai.agents.repo_analyzer import RepoAnalyzerAgent
+from readme_ai.agents.repo_analyzer import RepoAnalyzerService
 from readme_ai.agents.readme_agent import ReadmeCompilerAgent
 from readme_ai.repositories.readme_repository import ReadmeRepository
 from readme_ai.services.readme_service import ReadmeService
@@ -40,8 +41,12 @@ async def generate_readme(
     minio_service: MinioService = Depends(get_minio_service),
 ):
     github_token = settings.GITHUB_TOKEN
-    repo_analyzer = RepoAnalyzerAgent(github_token=github_token)
     readme_compiler = ReadmeCompilerAgent()
+    repo_service = RepositoryService(db_session=db)
+    repo_analyzer = RepoAnalyzerService(
+        github_token=github_token, repository_service=repo_service
+    )
+
     user: ClerkUser = request.state.user
 
     async def event_generator():
@@ -71,7 +76,26 @@ async def generate_readme(
                 ),
             }
 
-            repo_analysis = await repo_analyzer.analyze_repo(repo_url=repo_url)
+            existing_repo = await repo_service.get_repository_by_url(repo_url)
+
+            if not existing_repo:
+                repo_name = repo_url.split("/")[-1]
+
+                existing_repo = await repo_service.create_repository(
+                    repo_name, repo_url, user.get_user_id()
+                )
+
+            if not existing_repo:
+                yield {
+                    "event": "error",
+                    "data": json.dumps(
+                        {
+                            "message": "Failed to create or fetch repository",
+                        }
+                    ),
+                }
+
+            repo_analysis = await repo_analyzer.analyze_repo(existing_repo)
 
             if repo_analysis.get("status") == "error":
                 yield {

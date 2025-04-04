@@ -43,12 +43,12 @@ export default function Navbar() {
 
           <div className="flex items-center space-x-4">
             <SignedOut>
-              <SignInButton forceRedirectUrl="/home">
+              <SignInButton signUpForceRedirectUrl="/home">
                 <Button variant="ghost" className="text-sm">
                   Sign In
                 </Button>
               </SignInButton>
-              <SignUpButton forceRedirectUrl="/home">
+              <SignUpButton signInForceRedirectUrl="/home">
                 <Button className="text-sm bg-gradient-to-r from-primary to-accent hover:opacity-90">
                   Get Started
                 </Button>

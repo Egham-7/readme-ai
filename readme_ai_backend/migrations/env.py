@@ -8,6 +8,7 @@ from readme_ai.models.base import Base
 from readme_ai.models.readme import Readme, ReadmeVersion, ChatMessage
 from readme_ai.models.template import Template
 from readme_ai.models.users import User
+from readme_ai.models.repository import Repository, FileContent
 from readme_ai.settings import get_settings
 
 config = context.config
