@@ -2,7 +2,7 @@ from typing import List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from readme_ai.models.base import Repository, FileContent  # type: ignore
+from readme_ai.models.repository import Repository, FileContent  # type: ignore
 
 
 class RepositoryRepo:

@@ -1,7 +1,7 @@
 from typing import Optional
 from datetime import datetime, timezone
 from sqlalchemy import Integer, String, DateTime
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from readme_ai.models.base import Base
 
 
@@ -22,6 +22,7 @@ class User(Base):
     stripe_customer_id: Mapped[Optional[str]] = mapped_column(
         String, unique=True, nullable=True
     )
+    repositories = relationship("Repository", back_populates="user")
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(

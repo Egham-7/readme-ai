@@ -7,7 +7,7 @@ ENV PYTHONUNBUFFERED=1 \
   PIP_NO_CACHE_DIR=off \
   PIP_DISABLE_PIP_VERSION_CHECK=on \
   PIP_DEFAULT_TIMEOUT=100 \
-  POETRY_VERSION=2.0.1 \
+  POETRY_VERSION=2.1.2 \
   POETRY_HOME="/opt/poetry" \
   POETRY_VIRTUALENVS_IN_PROJECT=true \
   POETRY_NO_INTERACTION=1 \
@@ -26,7 +26,12 @@ RUN apk add --no-cache \
   build-base \
   postgresql-dev \
   python3-dev \
-  gcc
+  gcc \
+  musl-dev \
+  openssl-dev \
+  cargo \
+  rust \ 
+  libgcc
 
 # Install Poetry
 RUN curl -sSL https://install.python-poetry.org | python3 -
@@ -43,7 +48,7 @@ RUN poetry install --only main --no-root
 FROM python-base AS production
 
 # Install runtime dependencies (libpq for PostgreSQL and bash for shell script)
-RUN apk add --no-cache libpq bash
+RUN apk add --no-cache libpq bash libgcc
 
 # Copy virtual environment from builder
 COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
@@ -54,7 +59,6 @@ USER appuser
 
 # Set working directory
 WORKDIR /app
-
 COPY --chown=appuser:appuser ./readme_ai ./readme_ai
 COPY --chown=appuser:appuser entrypoint.sh /entrypoint.sh
 COPY --chown=appuser:appuser alembic.ini /app/alembic.ini
@@ -71,3 +75,4 @@ EXPOSE 8000
 
 # Run migrations and start the application
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
+
