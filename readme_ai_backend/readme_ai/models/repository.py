@@ -16,7 +16,7 @@ class Repository(Base):
     user = relationship("User", back_populates="repositories")
 
     # Relationship with FileAnalysis
-    file_analyses = relationship("FileAnalysis", back_populates="repository")
+    files_content = relationship("FileAnalysis", back_populates="repository")
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
