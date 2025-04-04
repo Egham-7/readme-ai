@@ -64,18 +64,6 @@ async def generate_readme(
                 ),
             }
 
-            yield {
-                "event": "progress",
-                "data": json.dumps(
-                    {
-                        "stage": "analysis",
-                        "message": "Analyzing repository structure...",
-                        "progress": 0.3,
-                        "timestamp": datetime.now().isoformat(),
-                    }
-                ),
-            }
-
             existing_repo = await repo_service.get_repository_by_url(repo_url)
 
             if not existing_repo:
@@ -91,9 +79,23 @@ async def generate_readme(
                     "data": json.dumps(
                         {
                             "message": "Failed to create or fetch repository",
+                            "error_code": "INTERNAL_SERVER_ERROR",
+                            "timestamp": timestamp,
                         }
                     ),
                 }
+
+            yield {
+                "event": "progress",
+                "data": json.dumps(
+                    {
+                        "stage": "analysis",
+                        "message": "Analyzing repository structure...",
+                        "progress": 0.3,
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                ),
+            }
 
             repo_analysis = await repo_analyzer.analyze_repo(existing_repo)
 
