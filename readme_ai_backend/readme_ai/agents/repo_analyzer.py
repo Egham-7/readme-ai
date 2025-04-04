@@ -114,9 +114,14 @@ class RepoAnalyzerService:
 
             analyses = await self._analyze_files_concurrently(files_content, repo_url)
 
-            # Store file analyses in the database with embeddings
+            existing_files = await self.repository_service.get_repository_file_contents(
+                repo.id
+            )
+
             for file_analysis in analyses:
-                # Generate embeddings for the file content analysis
+                if len(existing_files) <= 0:
+                    break
+
                 analysis_text = file_analysis["analysis"]
                 embedding = self.embeddings.embed_query(analysis_text)
 
