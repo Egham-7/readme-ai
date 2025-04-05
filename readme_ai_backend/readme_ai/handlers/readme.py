@@ -155,8 +155,7 @@ async def generate_readme(
                 template_content=template_content,
             )
 
-            final_title = title or extract_title_from_content(
-                readme_content["readme"])
+            final_title = title or extract_title_from_content(readme_content["readme"])
 
             readme_repository = ReadmeRepository(db_session=db)
             readme_service = ReadmeService(readme_repository=readme_repository)

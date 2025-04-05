@@ -4,7 +4,6 @@ from langgraph.graph import StateGraph, START, END  # type:ignore
 from langchain_groq import ChatGroq  # type:ignore
 from langchain_openai import OpenAIEmbeddings  # type:ignore
 from pydantic import BaseModel, Field  # type:ignore
-from functools import lru_cache
 from readme_ai.models.repository import Repository
 from readme_ai.prompts import (
     plan_prompt,
@@ -40,7 +39,6 @@ class ReadmeCompilerAgent:
         logger.info("Initializing ReadmeCompilerAgent")
         self.llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
         self.graph = self._build_gen_readme_graph()
-        self._cache = {}
         self.repository_service = repository_service
         self.embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
         logger.info("ReadmeCompilerAgent initialized successfully")
@@ -262,8 +260,3 @@ class ReadmeCompilerAgent:
         except Exception as e:
             logger.error(f"README generation failed: {str(e)}")
             raise ValueError(f"README generation failed: {str(e)}")
-
-    def clear_cache(self):
-        """Clear internal caches"""
-        self._cache.clear()
-        self._build_gen_readme_graph.cache_clear()

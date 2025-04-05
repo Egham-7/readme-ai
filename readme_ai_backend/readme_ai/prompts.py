@@ -146,8 +146,7 @@ analyse_file_prompt = ChatPromptTemplate.from_messages(
             "system",
             "You are a technical documentation expert. Provide a concise and comprehensive analysis of the file. Your summary should be in a few sentences that clearly state what the file mainly contains and highlight any critical details necessary for writing a README.md file.",
         ),
-        ("human",
-         "Analyze this file:\nPath: {file_path}\nContent: {file_content}\n"),
+        ("human", "Analyze this file:\nPath: {file_path}\nContent: {file_content}\n"),
     ]
 )
 
