@@ -41,8 +41,8 @@ async def generate_readme(
     minio_service: MinioService = Depends(get_minio_service),
 ):
     github_token = settings.GITHUB_TOKEN
-    readme_compiler = ReadmeCompilerAgent()
     repo_service = RepositoryService(db_session=db)
+    readme_compiler = ReadmeCompilerAgent(repository_service=repo_service)
     repo_analyzer = RepoAnalyzerService(
         github_token=github_token, repository_service=repo_service
     )
@@ -150,12 +150,13 @@ async def generate_readme(
             }
 
             readme_content = await readme_compiler.gen_readme(
-                repo_url=repo_url,
+                repository=existing_repo,
                 repo_analysis=repo_analysis["analysis"],
                 template_content=template_content,
             )
 
-            final_title = title or extract_title_from_content(readme_content["readme"])
+            final_title = title or extract_title_from_content(
+                readme_content["readme"])
 
             readme_repository = ReadmeRepository(db_session=db)
             readme_service = ReadmeService(readme_repository=readme_repository)

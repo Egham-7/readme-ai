@@ -146,7 +146,8 @@ analyse_file_prompt = ChatPromptTemplate.from_messages(
             "system",
             "You are a technical documentation expert. Provide a concise and comprehensive analysis of the file. Your summary should be in a few sentences that clearly state what the file mainly contains and highlight any critical details necessary for writing a README.md file.",
         ),
-        ("human", "Analyze this file:\nPath: {file_path}\nContent: {file_content}\n"),
+        ("human",
+         "Analyze this file:\nPath: {file_path}\nContent: {file_content}\n"),
     ]
 )
 
@@ -180,31 +181,39 @@ plan_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-writing_readme_prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            """You are a technical writer specializing in concise, high-quality MARKDOWN documentation. Your task is to create a production-ready README.md. Follow these guidelines:
+question_generation_prompt = ChatPromptTemplate.from_template(
+    """You are an expert developer analyzing a code repository to generate a README.
+    
+    Based on the repository analysis below, generate 5-10 specific questions that would help you understand the repository better.
+    These questions should focus on key aspects like architecture, main components, functionality, dependencies, and usage patterns.
+    
+    Repository URL: {repo_url}
+    
+    Repository Analysis:
+    {repo_analysis}
+    
+    Generate clear, specific questions that would help gather important information for creating a comprehensive README.
+    Format your response as a numbered list of questions.
+    """
+)
 
-            - **Project Overview**: Clear description with relevant badges.
-            - **Quick Start**: Minimal setup instructions.
-            - **Installation**: Dependencies, system requirements, and setup steps.
-            - **Usage Examples**: Code snippets for real-world use.
-            - **API Docs**: If applicable, structured API reference.
-            - **Build & Deployment**: Steps for different environments.
-            - **Contribution Guide**: Instructions for contributors.
-
-            """,
-        ),
-        (
-            "human",
-            """Generate a **production-grade** README.md using the following:
-
-            ### Inputs:
-            - **Strategic Plan**: {strategic_plan}
-            
-            Ensure clarity, completeness, and professional formatting.
-            """,
-        ),
-    ]
+# Update the writing_readme_prompt to include additional context
+writing_readme_prompt = ChatPromptTemplate.from_template(
+    """You are an expert developer creating a comprehensive README for a code repository.
+    
+    Based on the strategic plan below and the additional context gathered from the repository files, 
+    write a complete, well-structured README.md file.
+    
+    Strategic Plan:
+    {strategic_plan}
+    
+    Additional Context from Repository Files:
+    {additional_context}
+    
+    Your README should be comprehensive, well-organized, and follow Markdown formatting.
+    Include all necessary sections such as installation instructions, usage examples, architecture overview,
+    and any other relevant information for users and contributors.
+    
+    Output only the README.md content, properly formatted in Markdown.
+    """
 )
