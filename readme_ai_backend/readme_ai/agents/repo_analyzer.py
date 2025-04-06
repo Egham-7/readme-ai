@@ -67,7 +67,8 @@ class RepoAnalyzerService:
                 '/' if current_path else ''}.gitignore"
             # Check if we've already parsed this .gitignore
             if gitignore_path in self._gitignore_cache:
-                applicable_patterns.extend(self._gitignore_cache[gitignore_path])
+                applicable_patterns.extend(
+                    self._gitignore_cache[gitignore_path])
                 continue
             # Try to read the .gitignore file
             try:
@@ -110,7 +111,8 @@ class RepoAnalyzerService:
 
             # If we already have file contents, return them instead of analyzing again
             if existing_files and len(existing_files) > 0:
-                logger.info(f"Using existing analysis for repository {repo.id}")
+                logger.info(
+                    f"Using existing analysis for repository {repo.id}")
                 return {
                     "status": "success",
                     "repo_url": repo_url,
@@ -170,7 +172,7 @@ class RepoAnalyzerService:
             logger.error(f"Repository analysis failed: {error_details}")
             return error_details
 
-    async def _collect_files(self, repo_url: str, max_depth: int = 2) -> List[str]:
+    async def _collect_files(self, repo_url: str, max_depth: int = 1) -> List[str]:
         """Collect all files from the repository that aren't in the ignore list, with configurable max depth"""
         try:
             with Github(self.github_token) as github_client:
@@ -199,7 +201,8 @@ class RepoAnalyzerService:
                             if content.type == "dir":
                                 # Only add directories to the queue if we haven't reached max depth
                                 if current_depth < max_depth:
-                                    queue.append((content.path, current_depth + 1))
+                                    queue.append(
+                                        (content.path, current_depth + 1))
                             else:
                                 # Check if we should ignore this file
                                 if not await self._should_ignore_file(
@@ -207,10 +210,8 @@ class RepoAnalyzerService:
                                 ):
                                     all_files.append(content.path)
                     except Exception as e:
-                        logger.warning(
-                            f"Error accessing path {
-                                       current_path}: {e}"
-                        )
+                        logger.warning(f"Error accessing path {
+                                       current_path}: {e}")
 
                 return all_files
         except Exception as e:
@@ -227,7 +228,8 @@ class RepoAnalyzerService:
     ) -> List[Dict[str, str]]:
         async def analyze_single_file(file_path: str, content: str) -> Dict[str, str]:
             try:
-                analyzer: FileAnalyzer = self.analyzer_factory.get_analyzer(file_path)
+                analyzer: FileAnalyzer = self.analyzer_factory.get_analyzer(
+                    file_path)
                 technical_analysis = analyzer.analyze(content, file_path)
                 return {"path": file_path, "analysis": technical_analysis}
             except Exception as e:
