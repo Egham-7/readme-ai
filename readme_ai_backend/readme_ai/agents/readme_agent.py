@@ -87,11 +87,12 @@ class ReadmeCompilerAgent:
 
         # Parse questions from the response
         questions_text = str(result.content)
-        questions = [q.strip()
-                     for q in questions_text.split("\n") if q.strip()]
+        questions = [q.strip() for q in questions_text.split("\n") if q.strip()]
 
-        logger.info(f"Generated {len(questions)
-                                 } questions about the repository")
+        logger.info(
+            f"Generated {len(questions)
+                                 } questions about the repository"
+        )
 
         return {**state, "questions": questions}
 
